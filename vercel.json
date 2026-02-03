@@ -1,10 +1,4 @@
 {
-  "name": "syncteam",
-  "version": "1.0.0",
-  "description": "SyncTeam - Project Management SaaS",
-  "build": {
-    "env": {}
-  },
   "routes": [
     {
       "handle": "filesystem"
