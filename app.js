@@ -533,7 +533,12 @@ async function checkSession() {
             appState.currentUser.email = session.user.email;
             await fetchUserProfile(session.user.id);
             await fetchInitialData();
-            navigateTo(localStorage.getItem('lastPage') || 'dashboard');
+
+            let targetPage = localStorage.getItem('lastPage') || 'dashboard';
+            if (['login', 'signup', 'forgot-password'].includes(targetPage)) {
+                targetPage = 'dashboard';
+            }
+            navigateTo(targetPage);
         } else {
             navigateTo('login');
         }
