@@ -536,12 +536,56 @@ async function checkSession() {
 
 async function handleLogin(event) {
     event.preventDefault();
+    const btn = event.target.querySelector('button[type="submit"]');
     const email = event.target.email.value;
     const password = event.target.password.value;
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="material-symbols-outlined spinning" style="font-size: 18px;">progress_activity</span> Signing In...';
+
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) return showToast(error.message, 'error');
+
+    if (error) {
+        showToast(error.message, 'error');
+        btn.disabled = false;
+        btn.innerHTML = 'Sign In';
+        return;
+    }
+
     showToast('Login successful', 'success');
     checkSession();
+}
+
+async function handleSignup(event) {
+    event.preventDefault();
+    const btn = event.target.querySelector('button[type="submit"]');
+    const name = event.target.name.value;
+    const email = event.target.email.value;
+    const password = event.target.password.value;
+    const role = event.target.role.value;
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="material-symbols-outlined spinning" style="font-size: 18px;">progress_activity</span> Creating Account...';
+
+    const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+            data: { full_name: name, role: role }
+        }
+    });
+
+    if (error) {
+        showToast(error.message, 'error');
+        btn.disabled = false;
+        btn.innerHTML = 'Create Account';
+        return;
+    }
+
+    showToast('Account created! Please check your email.', 'success');
+    setTimeout(() => {
+        navigateTo('login');
+    }, 2000);
 }
 
 function handleLogout() {
@@ -671,20 +715,71 @@ function renderBreadcrumbs(container, items) {
     </div>`;
 }
 
-// Auth Views Fallback
+// Auth Views
 function renderLogin(container) {
     container.innerHTML = `
         <div class="auth-container">
             <div class="card auth-card">
-                <h2>Login</h2>
+                <div class="text-center mb-2">
+                    <div style="background: var(--gradient-primary); width: 48px; height: 48px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; color: #000; font-weight: 800; font-size: 24px; margin-bottom: 1rem;">TS</div>
+                    <h2>Welcome Back</h2>
+                    <p style="color: var(--text-secondary);">Sign in to continue to SyncTeam</p>
+                </div>
                 <form onsubmit="handleLogin(event)">
-                    <div class="form-group"><label>Email</label><input type="email" name="email" class="form-control" required></div>
-                    <div class="form-group"><label>Password</label><input type="password" name="password" class="form-control" required></div>
-                    <button type="submit" class="btn btn-primary w-100">Login</button>
-                    <p class="mt-2">No account? <a href="javascript:void(0)" onclick="navigateTo('signup')">Sign Up</a></p>
+                    <div class="form-group">
+                        <label class="form-label">Email Address</label>
+                        <input type="email" name="email" class="form-control" placeholder="name@company.com" required>
+                    </div>
+                    <div class="form-group">
+                        <div class="flex-between">
+                            <label class="form-label">Password</label>
+                            <a href="javascript:void(0)" onclick="navigateTo('forgot-password')" style="font-size: 0.8rem;">Forgot password?</a>
+                        </div>
+                        <input type="password" name="password" class="form-control" placeholder="••••••••" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100" style="padding: 0.75rem;">Sign In</button>
+                    
+                    <div style="margin-top: 1.5rem; text-align: center; font-size: 0.9rem;">
+                        <p>Don't have an account? <a href="javascript:void(0)" onclick="navigateTo('signup')" style="font-weight: 600;">Create account</a></p>
+                    </div>
+                </form>
+            </div>
+            <div style="margin-top: 2rem; display: flex; gap: 2rem; justify-content: center; font-size: 0.9rem; color: var(--text-secondary);">
+                <a href="javascript:void(0)" onclick="renderPlaceholder(document.getElementById('app-content'), 'About Us')">About Us</a>
+                <a href="javascript:void(0)" onclick="renderPlaceholder(document.getElementById('app-content'), 'Contact Support')">Contact Us</a>
+                <a href="javascript:void(0)" onclick="renderPlaceholder(document.getElementById('app-content'), 'Feedback')">Feedback</a>
+            </div>
+        </div>`;
+}
+
+function renderSignup(container) {
+    container.innerHTML = `
+        <div class="auth-container">
+            <div class="card auth-card">
+                <div class="text-center mb-2">
+                    <h2>Create Account</h2>
+                    <p style="color: var(--text-secondary);">Start managing your projects today</p>
+                </div>
+                <form onsubmit="handleSignup(event)"> <!-- handleSignup is missing! Need to add it too -->
+                    <div class="form-group"><label class="form-label">Full Name</label><input type="text" name="name" class="form-control" placeholder="John Doe" required></div>
+                    <div class="form-group"><label class="form-label">Email Address</label><input type="email" name="email" class="form-control" required></div>
+                    <div class="form-group"><label class="form-label">Password</label><input type="password" name="password" class="form-control" placeholder="Min. 6 characters" minlength="6" required></div>
+                    <div class="form-group">
+                        <label class="form-label">I am a...</label>
+                        <select name="role" class="form-control">
+                            <option value="Project Manager">Project Manager</option>
+                            <option value="Member">Team Member</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100" style="padding: 0.75rem;">Create Account</button>
+                    <p class="mt-2 text-center">Already have an account? <a href="javascript:void(0)" onclick="navigateTo('login')">Log In</a></p>
                 </form>
             </div>
         </div>`;
+}
+
+function renderForgotPassword(container) {
+    renderPlaceholder(container, 'Reset Password Flow');
 }
 
 // Add these to window for direct HTML onclick access
@@ -693,6 +788,8 @@ window.filterTasks = filterTasks;
 window.filterProjects = filterProjects;
 window.switchSettingsTab = switchSettingsTab;
 window.handleLogin = handleLogin;
+window.handleSignup = handleSignup;
 window.handleLogout = handleLogout;
+window.renderPlaceholder = renderPlaceholder;
 window.toggleSelectAll = (type, val) => { /* logic */ };
 window.toggleSelectItem = (type, id, val) => { /* logic */ };
