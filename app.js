@@ -160,6 +160,16 @@ function navigateTo(page, param = null) {
     localStorage.setItem('lastPage', page);
     if (param) localStorage.setItem('lastParam', param);
 
+    // Toggle Auth Mode
+    const authPages = ['login', 'signup', 'forgot-password'];
+    const isAuthPage = authPages.includes(page);
+
+    if (isAuthPage) {
+        document.body.classList.add('auth-mode');
+    } else {
+        document.body.classList.remove('auth-mode');
+    }
+
     // Update Sidebar
     document.querySelectorAll('.nav-item').forEach(item => {
         item.classList.toggle('active', item.dataset.page === page);
@@ -721,7 +731,7 @@ function renderLogin(container) {
         <div class="auth-container">
             <div class="card auth-card">
                 <div class="text-center mb-2">
-                    <div style="background: var(--gradient-primary); width: 48px; height: 48px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; color: #000; font-weight: 800; font-size: 24px; margin-bottom: 1rem;">TS</div>
+                    <div style="background: var(--gradient-primary); width: 48px; height: 48px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; color: #000; font-weight: 800; font-size: 24px; margin-bottom: 1rem;">ST</div>
                     <h2>Welcome Back</h2>
                     <p style="color: var(--text-secondary);">Sign in to continue to SyncTeam</p>
                 </div>
