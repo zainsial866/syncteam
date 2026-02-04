@@ -794,15 +794,99 @@ function openEditTaskModal(id) {
 }
 
 function renderModal(content) {
-    const overlay = document.getElementById('modal-overlay');
-    overlay.innerHTML = `<div class="modal">${content}</div>`;
-    overlay.classList.add('open');
+    const container = document.getElementById('modal-container');
+    if (!container) return;
+
+    container.innerHTML = `
+        <div class="modal-overlay" onclick="closeModal()"></div>
+        <div class="modal-card">
+            ${content}
+        </div>
+    `;
+    container.classList.add('active');
 }
 
 function closeModal() {
-    const overlay = document.getElementById('modal-overlay');
-    overlay.classList.remove('open');
-    setTimeout(() => overlay.innerHTML = '', 300);
+    const container = document.getElementById('modal-container');
+    if (container) {
+        container.classList.remove('active');
+        setTimeout(() => {
+            if (!container.classList.contains('active')) {
+                container.innerHTML = '';
+            }
+        }, 300);
+    }
+}
+
+function openInviteMemberModal() {
+    renderModal(`
+        <div class="modal-header">
+            <h2 style="margin: 0;">Invite Team Member</h2>
+            <button class="btn btn-ghost" onclick="closeModal()" style="padding: 4px;">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form onsubmit="handleInviteMember(event)">
+                <div class="form-group">
+                    <label class="form-label">Full Name</label>
+                    <input type="text" name="name" class="form-control" placeholder="Jane Doe" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email Address</label>
+                    <input type="email" name="email" class="form-control" placeholder="jane@company.com" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Role</label>
+                    <select name="role" class="form-control">
+                        <option value="Member">Team Member</option>
+                        <option value="Project Manager">Project Manager</option>
+                        <option value="Admin">Admin</option>
+                        <option value="Viewer">Viewer</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Bio (Optional)</label>
+                    <textarea name="bio" class="form-control" rows="3" placeholder="Tell us a bit about this person..."></textarea>
+                </div>
+                <div class="modal-footer" style="padding: 1.5rem 0 0;">
+                    <button type="button" class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Send Invitation</button>
+                </div>
+            </form>
+        </div>
+    `);
+}
+
+async function handleInviteMember(event) {
+    event.preventDefault();
+    const formData = new FormData(event.target);
+    const newMember = {
+        id: 'temp-' + Date.now(),
+        full_name: formData.get('name'),
+        email: formData.get('email'),
+        role: formData.get('role'),
+        bio: formData.get('bio'),
+        joined_at: new Date().toISOString()
+    };
+
+    // UI Feedback
+    const submitBtn = event.target.querySelector('button[type="submit"]');
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="material-symbols-outlined spinning">progress_activity</span> Inviting...';
+    }
+
+    // In a real app, we would send this to Supabase. 
+    // For now, we update local state to show it works.
+    setTimeout(() => {
+        appState.team.unshift(newMember);
+        showToast(`Invitation sent to ${newMember.full_name}`, 'success');
+        closeModal();
+        if (appState.currentPage === 'team') {
+            navigateTo('team');
+        }
+    }, 1000);
 }
 
 
@@ -1023,7 +1107,7 @@ window.renderTeam = (container) => {
     container.innerHTML = `
         <div class="flex-between mb-2">
             <h1>Team Directory</h1>
-            <button class="btn btn-primary" onclick="showToast('Inviting team members...', 'info')"><span class="material-symbols-outlined">person_add</span> Invite Member</button>
+            <button class="btn btn-primary" onclick="openInviteMemberModal()"><span class="material-symbols-outlined">person_add</span> Invite Member</button>
         </div>
         <div class="grid-4">
             ${appState.team.map(member => `
@@ -1348,3 +1432,5 @@ window.handleUpdateTask = handleUpdateTask;
 window.closeModal = closeModal;
 window.toggleSelectAll = (type, val) => { /* logic */ };
 window.toggleSelectItem = (type, id, val) => { /* logic */ };
+window.openInviteMemberModal = openInviteMemberModal;
+window.handleInviteMember = handleInviteMember;
