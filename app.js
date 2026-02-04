@@ -74,9 +74,10 @@ const appState = {
         'Admin': { permissions: ['*'] },
         'Project Manager': {
             permissions: [
-                'create:project', 'edit:project',
+                'create:project', 'edit:project', 'delete:project',
                 'create:task', 'edit:task', 'delete:task',
-                'create:client', 'edit:client', 'manage:team', 'export:data'
+                'create:client', 'edit:client', 'delete:client',
+                'manage:team', 'delete:member', 'view:emails', 'view:activity', 'export:data'
             ]
         },
         'Member': { permissions: ['create:task', 'edit:task', 'comment'] },
@@ -478,6 +479,7 @@ function filterTasks(status, btn) {
                 <td><span class="badge ${getStatusColor(t.status)}">${t.status}</span></td>
                 <td class="text-right">
                     <button class="btn btn-ghost" onclick="openEditTaskModal(${t.id})"><span class="material-symbols-outlined">edit</span></button>
+                    ${checkPermission('delete:task') ? `<button class="btn btn-ghost" style="color:var(--status-error);" onclick="confirmDeleteTask(${t.id})"><span class="material-symbols-outlined">delete</span></button>` : ''}
                 </td>
             </tr>`;
     }).join('') : `<tr><td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-tertiary);">No tasks found.</td></tr>`;
@@ -889,6 +891,73 @@ async function handleInviteMember(event) {
     }, 1000);
 }
 
+function openMemberActivityModal(memberId) {
+    const member = appState.team.find(m => m.id === memberId) || { full_name: 'Team Member' };
+
+    renderModal(`
+        <div class="modal-header">
+            <h2 style="margin: 0;">Activity: ${sanitizeHTML(member.full_name)}</h2>
+            <button class="btn btn-ghost" onclick="closeModal()" style="padding: 4px;">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="grid-4 mb-2" style="grid-template-columns: repeat(3, 1fr); gap:1rem;">
+                <div class="card p-1 text-center">
+                    <h4 style="margin:0; font-size:0.8rem; color:var(--text-tertiary);">Login Count</h4>
+                    <p style="font-size:1.5rem; font-weight:800; color:var(--accent-blue);">24</p>
+                </div>
+                <div class="card p-1 text-center">
+                    <h4 style="margin:0; font-size:0.8rem; color:var(--text-tertiary);">Avg. Session</h4>
+                    <p style="font-size:1.5rem; font-weight:800; color:var(--accent-green);">1h 45m</p>
+                </div>
+                <div class="card p-1 text-center">
+                    <h4 style="margin:0; font-size:0.8rem; color:var(--text-tertiary);">Active Projects</h4>
+                    <p style="font-size:1.5rem; font-weight:800; color:var(--accent-orange);">3</p>
+                </div>
+            </div>
+            <div class="card">
+                <h3>Productivity Trend</h3>
+                <div style="height: 250px;"><canvas id="memberTrendChart"></canvas></div>
+            </div>
+        </div>
+    `);
+
+    // Wait a tick for modal to render before initializing chart
+    setTimeout(() => initMemberActivityChart(), 100);
+}
+
+function initMemberActivityChart() {
+    const ctx = document.getElementById('memberTrendChart')?.getContext('2d');
+    if (!ctx) return;
+
+    if (window.memberChartInstance) window.memberChartInstance.destroy();
+
+    window.memberChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+            datasets: [{
+                label: 'Hours Spent',
+                data: [6, 8.5, 7, 9, 8, 2, 1],
+                borderColor: '#00FF00',
+                backgroundColor: 'rgba(0, 255, 0, 0.1)',
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#808080' } },
+                x: { grid: { display: false }, ticks: { color: '#808080' } }
+            }
+        }
+    });
+}
+
 
 // --- CRUD Handlers ---
 
@@ -992,6 +1061,7 @@ async function handleUpdateTask(event, id) {
 
 // --- Confirm Delete ---
 window.confirmDeleteProject = async (id) => {
+    if (!checkPermission('delete:project')) return showToast('Permission denied', 'error');
     if (confirm('Are you sure you want to delete this project? This cannot be undone.')) {
         const { error } = await supabase.from('projects').delete().eq('id', id);
         if (error) {
@@ -1001,6 +1071,45 @@ window.confirmDeleteProject = async (id) => {
             showToast('Project deleted', 'success');
             navigateTo('projects');
         }
+    }
+};
+
+window.confirmDeleteTask = async (id) => {
+    if (!checkPermission('delete:task')) return showToast('Permission denied', 'error');
+    if (confirm('Delete this task?')) {
+        const { error } = await supabase.from('tasks').delete().eq('id', id);
+        if (error) {
+            showToast(error.message, 'error');
+        } else {
+            appState.tasks = appState.tasks.filter(t => t.id !== id);
+            showToast('Task deleted', 'success');
+            if (appState.currentPage === 'tasks') navigateTo('tasks');
+            else if (appState.currentPage === 'dashboard') navigateTo('dashboard');
+        }
+    }
+};
+
+window.confirmDeleteClient = async (id) => {
+    if (!checkPermission('delete:client')) return showToast('Permission denied', 'error');
+    if (confirm('Delete this client? This will affect related projects.')) {
+        const { error } = await supabase.from('clients').delete().eq('id', id);
+        if (error) {
+            showToast(error.message, 'error');
+        } else {
+            appState.clients = appState.clients.filter(c => c.id !== id);
+            showToast('Client removed', 'success');
+            navigateTo('clients');
+        }
+    }
+};
+
+window.confirmDeleteMember = async (id) => {
+    if (!checkPermission('delete:member')) return showToast('Permission denied', 'error');
+    if (confirm('Remove this member from the team?')) {
+        // Mock deletion for now as team might be from auth
+        appState.team = appState.team.filter(m => m.id !== id);
+        showToast('Member removed', 'success');
+        navigateTo('team');
     }
 };
 
@@ -1103,31 +1212,51 @@ function renderActivityFeed(container) {
     `;
 }
 
-window.renderTeam = (container) => {
+function renderTeam(container) {
+    const isPrivileged = checkPermission('view:emails');
     container.innerHTML = `
         <div class="flex-between mb-2">
-            <h1>Team Directory</h1>
+            <div>
+                <h1>Team Directory</h1>
+                <p style="color: var(--text-secondary);">Manage your team and their permissions.</p>
+            </div>
             <button class="btn btn-primary" onclick="openInviteMemberModal()"><span class="material-symbols-outlined">person_add</span> Invite Member</button>
         </div>
         <div class="grid-4">
             ${appState.team.map(member => `
-                <div class="card text-center">
+                <div class="card text-center" style="position:relative;">
+                    ${checkPermission('delete:member') ? `
+                    <button class="btn btn-ghost" onclick="confirmDeleteMember('${member.id}')" style="position:absolute; top:10px; right:10px; padding:4px; color:var(--status-error); border:none;">
+                        <span class="material-symbols-outlined" style="font-size:18px;">close</span>
+                    </button>` : ''}
                     <div style="width: 64px; height: 64px; background: var(--bg-tertiary); border-radius: 50%; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; border: 2px solid var(--accent-blue); overflow: hidden;">
                         <span class="material-symbols-outlined" style="font-size: 32px; color: var(--text-tertiary);">person</span>
                     </div>
                     <h3 style="margin-bottom: 0.25rem;">${sanitizeHTML(member.full_name || 'Team Member')}</h3>
                     <p style="font-size: 0.85rem; color: var(--accent-blue); margin-bottom: 0.5rem; font-weight: 600;">${member.role || 'Member'}</p>
-                    <p style="font-size: 0.8rem; color: var(--text-tertiary); line-height: 1.4;">${sanitizeHTML(member.bio || 'No bio available.')}</p>
+                    ${isPrivileged ? `<p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.5rem;">${sanitizeHTML(member.email || 'No email')}</p>` : ''}
+                    <p style="font-size: 0.8rem; color: var(--text-tertiary); line-height: 1.4; margin-bottom: 1rem;">${sanitizeHTML(member.bio || 'No bio available.')}</p>
+                    ${checkPermission('view:activity') ? `<button class="btn btn-ghost w-100" onclick="openMemberActivityModal('${member.id}')"><span class="material-symbols-outlined" style="font-size:18px;">analytics</span> View Activity</button>` : ''}
                 </div>`).join('')}
         </div>
     `;
-};
+}
+window.renderTeam = renderTeam;
 
 window.renderClients = (container) => {
     container.innerHTML = `
         <div class="flex-between mb-2">
-            <h1>Clients</h1>
-            <button class="btn btn-primary" onclick="showToast('Feature coming soon', 'info')"><span class="material-symbols-outlined">add</span> New Client</button>
+            <h1>Clients & Partners</h1>
+            ${checkPermission('create:client') ? `
+            <button class="btn btn-primary" onclick="showToast('Feature coming soon', 'info')">
+                <span class="material-symbols-outlined">add</span> New Client
+            </button>` : ''}
+        </div>
+        <div class="card mb-2">
+             <div class="grid-4" style="gap:1rem;">
+                ${renderStatCard(appState.clients.length, 'Total Clients', 'corporate_fare', 'var(--accent-blue)', 'rgba(0, 136, 255, 0.1)')}
+                ${renderStatCard(appState.projects.length, 'Total Projects', 'folder', 'var(--accent-green)', 'rgba(0, 255, 0, 0.1)')}
+             </div>
         </div>
         <div class="card">
             <div class="table-container">
@@ -1141,7 +1270,10 @@ window.renderClients = (container) => {
                                 <td style="font-weight: 600;">${sanitizeHTML(c.name)}</td>
                                 <td>${sanitizeHTML(c.email || 'N/A')}</td>
                                 <td>${appState.projects.filter(p => p.client_id === c.id).length}</td>
-                                <td class="text-right"><button class="btn btn-ghost">Manage</button></td>
+                                <td class="text-right">
+                                    <button class="btn btn-ghost" onclick="navigateTo('client-details', ${c.id})">Details</button>
+                                    ${checkPermission('delete:client') ? `<button class="btn btn-ghost" style="color:var(--status-error);" onclick="confirmDeleteClient(${c.id})"><span class="material-symbols-outlined" style="font-size:18px;">delete</span></button>` : ''}
+                                </td>
                             </tr>`).join('') : '<tr><td colspan="4" style="text-align: center; padding: 2rem; color: var(--text-tertiary);">No clients found.</td></tr>'}
                     </tbody>
                 </table>
@@ -1434,3 +1566,7 @@ window.toggleSelectAll = (type, val) => { /* logic */ };
 window.toggleSelectItem = (type, id, val) => { /* logic */ };
 window.openInviteMemberModal = openInviteMemberModal;
 window.handleInviteMember = handleInviteMember;
+window.openMemberActivityModal = openMemberActivityModal;
+window.confirmDeleteTask = confirmDeleteTask;
+window.confirmDeleteClient = confirmDeleteClient;
+window.confirmDeleteMember = confirmDeleteMember;
