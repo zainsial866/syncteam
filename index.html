@@ -143,7 +143,7 @@
 
                 <div style="display: flex; align-items: center; gap: 1rem;">
                     <div style="position: relative;">
-                        <button class="btn btn-ghost" id="notification-btn" onclick="toggleNotificationDropdown()"
+                        <button class="btn btn-ghost" id="notification-btn" onclick="toggleNotificationDropdown(event)"
                             style="padding: 8px; border: none; position: relative;">
                             <span class="material-symbols-outlined">notifications</span>
                             <!-- Notification Dot/Badge -->
@@ -171,7 +171,7 @@
                     </div>
 
                     <div style="display: flex; align-items: center; gap: 10px; cursor: pointer; position: relative;"
-                        id="user-profile-btn" onclick="toggleUserDropdown()">
+                        id="user-profile-btn" onclick="toggleUserDropdown(event)">
                         <div
                             style="width: 36px; height: 36px; background: var(--bg-tertiary); border-radius: 50%; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 1px solid var(--border-color);">
                             <span class="material-symbols-outlined" style="font-size: 20px;">person</span>

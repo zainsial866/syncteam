@@ -1322,6 +1322,8 @@ window.handleSignup = handleSignup;
 window.handleLogout = handleLogout;
 window.renderPlaceholder = renderPlaceholder;
 window.toggleTheme = toggleTheme;
+window.showToast = showToast;
+window.sanitizeHTML = sanitizeHTML;
 
 // Expose new handlers
 window.openCreateProjectModal = openCreateProjectModal;
