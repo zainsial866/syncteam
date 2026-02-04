@@ -1118,17 +1118,24 @@ function getProjectProgress(projectId) {
 // ==========================================================================
 
 function initApp() {
+    if (appState.isInitialized) {
+        console.log('⚠️ App already initialized, skipping...');
+        return;
+    }
+    
     console.log('🎬 Initializing Application...');
+    appState.isInitialized = true;
+    
     initTheme();
     initHeader();
-
-    // Fail-safe: Always hide loader after 8 seconds no matter what
+    
+    // Fail-safe: Always hide loader after 15 seconds (last resort)
     setTimeout(() => {
         if (document.getElementById('initial-loader')) {
-            console.warn('Initialization taking too long, forcing loader hide');
+            console.warn('Critical initialization timeout');
             hideLoader();
         }
-    }, 8000);
+    }, 15000);
 
     checkSession();
 }
