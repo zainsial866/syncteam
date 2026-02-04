@@ -992,8 +992,43 @@ function initTheme() {
 }
 
 function initHeader() {
+    // Sidebar Toggle (Mobile)
     document.getElementById('sidebar-toggle')?.addEventListener('click', () => {
         document.getElementById('sidebar')?.classList.toggle('open');
+    });
+
+    document.getElementById('sidebar-close')?.addEventListener('click', () => {
+        document.getElementById('sidebar')?.classList.remove('open');
+    });
+
+    // Navigation Items
+    const navItems = document.querySelectorAll('.nav-item');
+    navItems.forEach(item => {
+        item.addEventListener('click', () => {
+            const page = item.dataset.page;
+            if (page === 'logout') {
+                handleLogout();
+            } else if (page) {
+                navigateTo(page);
+            }
+
+            // Auto-close sidebar on mobile after clicking
+            if (window.innerWidth <= 768) {
+                document.getElementById('sidebar')?.classList.remove('open');
+            }
+        });
+    });
+
+    // Notification Dropdown Toggle
+    window.toggleNotificationDropdown = () => {
+        document.getElementById('notification-dropdown')?.classList.toggle('show');
+    };
+
+    // Close dropdowns on outside click
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('#notification-btn') && !e.target.closest('#notification-dropdown')) {
+            document.getElementById('notification-dropdown')?.classList.remove('show');
+        }
     });
 }
 
