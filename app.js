@@ -1051,14 +1051,25 @@ window.renderClients = (container) => {
 // ==========================================================================
 
 async function fetchInitialData() {
-    const { data: projects } = await supabase.from('projects').select('*');
-    appState.projects = projects || [];
-    const { data: tasks } = await supabase.from('tasks').select('*');
-    appState.tasks = tasks || [];
-    const { data: clients } = await supabase.from('clients').select('*');
-    appState.clients = clients || [];
-    const { data: profiles } = await supabase.from('profiles').select('*');
-    appState.team = profiles || [];
+    try {
+        const { data: projects, error: pError } = await supabase.from('projects').select('*');
+        if (pError) console.error('Projects fetch error:', pError);
+        appState.projects = projects || [];
+
+        const { data: tasks, error: tError } = await supabase.from('tasks').select('*');
+        if (tError) console.error('Tasks fetch error:', tError);
+        appState.tasks = tasks || [];
+
+        const { data: clients, error: cError } = await supabase.from('clients').select('*');
+        if (cError) console.error('Clients fetch error:', cError);
+        appState.clients = clients || [];
+
+        const { data: profiles, error: prError } = await supabase.from('profiles').select('*');
+        if (prError) console.error('Profiles fetch error:', prError);
+        appState.team = profiles || [];
+    } catch (e) {
+        console.error('Data hydration failed:', e);
+    }
 }
 
 async function fetchUserProfile(id) {
@@ -1089,8 +1100,18 @@ function getProjectProgress(projectId) {
 // ==========================================================================
 
 function initApp() {
+    console.log('🎬 Initializing Application...');
     initTheme();
     initHeader();
+
+    // Fail-safe: Always hide loader after 8 seconds no matter what
+    setTimeout(() => {
+        if (document.getElementById('initial-loader')) {
+            console.warn('Initialization taking too long, forcing loader hide');
+            hideLoader();
+        }
+    }, 8000);
+
     checkSession();
 }
 

@@ -60,7 +60,20 @@
             style="width: 48px; height: 48px; border: 4px solid var(--bg-tertiary); border-top-color: var(--accent-green); border-radius: 50%; animation: spin 1s linear infinite;">
         </div>
         <h3 style="color: var(--text-secondary); font-weight: 500;">SyncTeam</h3>
+        <p id="loader-fallback"
+            style="display: none; color: var(--text-tertiary); font-size: 0.85rem; margin-top: 2rem;">
+            Taking too long? <a href="javascript:void(0)" onclick="hideLoader(); navigateTo('login');"
+                style="color: var(--accent-blue); text-decoration: underline;">Skip to Login</a>
+        </p>
     </div>
+
+    <script>
+        // Inline fallback for the loader
+        setTimeout(() => {
+            const fallback = document.getElementById('loader-fallback');
+            if (fallback) fallback.style.display = 'block';
+        }, 5000);
+    </script>
 
     <div class="app-container">
         <!-- Sidebar Navigation -->
