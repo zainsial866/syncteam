@@ -610,6 +610,259 @@ function handleLogout() {
 // 10. Helper Views & Utils
 // ==========================================================================
 
+// --- Modal Functions ---
+
+function openCreateProjectModal() {
+    renderModal(`
+        <h2>Create New Project</h2>
+        <form onsubmit="handleCreateProject(event)">
+            <div class="form-group">
+                <label class="form-label">Project Name</label>
+                <input type="text" name="name" class="form-control" required placeholder="e.g. Website Redesign">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Client Name</label>
+                <input type="text" name="client_name" class="form-control" placeholder="e.g. Acme Corp">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Due Date</label>
+                <input type="date" name="end_date" class="form-control">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Description</label>
+                <textarea name="description" class="form-control" rows="3"></textarea>
+            </div>
+            <div class="text-right">
+                <button type="button" class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary">Create Project</button>
+            </div>
+        </form>
+    `);
+}
+
+function openCreateTaskModal() {
+    // Populate projects dropdown
+    const projectOptions = appState.projects.map(p => `<option value="${p.id}">${sanitizeHTML(p.name)}</option>`).join('');
+
+    renderModal(`
+        <h2>Create New Task</h2>
+        <form onsubmit="handleCreateTask(event)">
+            <div class="form-group">
+                <label class="form-label">Task Title</label>
+                <input type="text" name="title" class="form-control" required placeholder="e.g. Design Homepage">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Project</label>
+                <select name="project_id" class="form-control" required>
+                    <option value="" disabled selected>Select a project...</option>
+                    ${projectOptions}
+                </select>
+            </div>
+            <div class="form-group flex-between" style="gap: 1rem;">
+                <div style="flex:1">
+                    <label class="form-label">Priority</label>
+                    <select name="priority" class="form-control">
+                        <option value="Low">Low</option>
+                        <option value="Medium" selected>Medium</option>
+                        <option value="High">High</option>
+                    </select>
+                </div>
+                <div style="flex:1">
+                    <label class="form-label">Due Date</label>
+                    <input type="date" name="due_date" class="form-control">
+                </div>
+            </div>
+            <div class="text-right">
+                <button type="button" class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary">Create Task</button>
+            </div>
+        </form>
+    `);
+}
+
+function openEditProjectModal(id) {
+    const project = appState.projects.find(p => p.id === id);
+    if (!project) return;
+
+    renderModal(`
+        <h2>Edit Project</h2>
+        <form onsubmit="handleUpdateProject(event, ${id})">
+            <div class="form-group">
+                <label class="form-label">Project Name</label>
+                <input type="text" name="name" class="form-control" value="${sanitizeHTML(project.name)}" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Status</label>
+                <select name="status" class="form-control">
+                    <option value="Active" ${project.status === 'Active' ? 'selected' : ''}>Active</option>
+                    <option value="On Hold" ${project.status === 'On Hold' ? 'selected' : ''}>On Hold</option>
+                    <option value="Completed" ${project.status === 'Completed' ? 'selected' : ''}>Completed</option>
+                </select>
+            </div>
+            <div class="text-right">
+                <button type="button" class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+            </div>
+        </form>
+    `);
+}
+
+function openEditTaskModal(id) {
+    const task = appState.tasks.find(t => t.id === id);
+    if (!task) return;
+
+    renderModal(`
+        <h2>Edit Task</h2>
+        <form onsubmit="handleUpdateTask(event, ${id})">
+            <div class="form-group">
+                <label class="form-label">Task Title</label>
+                <input type="text" name="title" class="form-control" value="${sanitizeHTML(task.title)}" required>
+            </div>
+             <div class="form-group">
+                <label class="form-label">Status</label>
+                <select name="status" class="form-control">
+                    <option value="Pending" ${task.status === 'Pending' ? 'selected' : ''}>Pending</option>
+                    <option value="In Progress" ${task.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
+                    <option value="Completed" ${task.status === 'Completed' ? 'selected' : ''}>Completed</option>
+                </select>
+            </div>
+            <div class="text-right">
+                <button type="button" class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+            </div>
+        </form>
+    `);
+}
+
+function renderModal(content) {
+    const overlay = document.getElementById('modal-overlay');
+    overlay.innerHTML = `<div class="modal">${content}</div>`;
+    overlay.classList.add('open');
+}
+
+function closeModal() {
+    const overlay = document.getElementById('modal-overlay');
+    overlay.classList.remove('open');
+    setTimeout(() => overlay.innerHTML = '', 300);
+}
+
+
+// --- CRUD Handlers ---
+
+async function handleCreateProject(event) {
+    event.preventDefault();
+    const formData = new FormData(event.target);
+    const data = {
+        name: formData.get('name'),
+        client_name: formData.get('client_name'),
+        end_date: formData.get('end_date') || null,
+        description: formData.get('description'),
+        created_by: appState.currentUser.id, // Auth Owner
+        status: 'Active'
+    };
+
+    // Optimistic UI
+    closeModal();
+    showToast('Creating project...', 'info');
+
+    const { data: newProject, error } = await supabase.from('projects').insert([data]).select().single();
+
+    if (error) {
+        showToast('Error creating project: ' + error.message, 'error');
+        return;
+    }
+
+    appState.projects.unshift(newProject);
+    showToast('Project created successfully', 'success');
+    navigateTo('projects'); // Refresh view
+}
+
+async function handleCreateTask(event) {
+    event.preventDefault();
+    const formData = new FormData(event.target);
+    const data = {
+        title: formData.get('title'),
+        project_id: formData.get('project_id'),
+        priority: formData.get('priority'),
+        due_date: formData.get('due_date') || null,
+        user_id: appState.currentUser.id, // Auth Owner
+        status: 'Pending'
+    };
+
+    closeModal();
+    showToast('Creating task...', 'info');
+
+    const { data: newTask, error } = await supabase.from('tasks').insert([data]).select().single();
+
+    if (error) {
+        showToast('Error creating task: ' + error.message, 'error');
+        return;
+    }
+
+    appState.tasks.unshift(newTask);
+    showToast('Task created successfully', 'success');
+    if (appState.currentPage === 'tasks' || appState.currentPage === 'dashboard') {
+        navigateTo(appState.currentPage); // Refresh
+    }
+}
+
+async function handleUpdateProject(event, id) {
+    event.preventDefault();
+    const formData = new FormData(event.target);
+    const updates = {
+        name: formData.get('name'),
+        status: formData.get('status')
+    };
+
+    closeModal();
+    const { error } = await supabase.from('projects').update(updates).eq('id', id);
+    if (error) {
+        showToast(error.message, 'error');
+    } else {
+        const idx = appState.projects.findIndex(p => p.id === id);
+        if (idx !== -1) appState.projects[idx] = { ...appState.projects[idx], ...updates };
+        showToast('Project updated', 'success');
+        navigateTo(appState.currentPage);
+    }
+}
+
+async function handleUpdateTask(event, id) {
+    event.preventDefault();
+    const formData = new FormData(event.target);
+    const updates = {
+        title: formData.get('title'),
+        status: formData.get('status')
+    };
+
+    closeModal();
+    const { error } = await supabase.from('tasks').update(updates).eq('id', id);
+    if (error) {
+        showToast(error.message, 'error');
+    } else {
+        const idx = appState.tasks.findIndex(t => t.id === id);
+        if (idx !== -1) appState.tasks[idx] = { ...appState.tasks[idx], ...updates };
+        showToast('Task updated', 'success');
+        navigateTo(appState.currentPage);
+    }
+}
+
+
+// --- Confirm Delete ---
+window.confirmDeleteProject = async (id) => {
+    if (confirm('Are you sure you want to delete this project? This cannot be undone.')) {
+        const { error } = await supabase.from('projects').delete().eq('id', id);
+        if (error) {
+            showToast(error.message, 'error');
+        } else {
+            appState.projects = appState.projects.filter(p => p.id !== id);
+            showToast('Project deleted', 'success');
+            navigateTo('projects');
+        }
+    }
+};
+
+window.renderPlaceholderDetails = renderPlaceholderDetails;
+
 function renderPlaceholder(container, title) {
     container.innerHTML = `
         <div class="p-2 text-center">
@@ -801,5 +1054,16 @@ window.handleLogin = handleLogin;
 window.handleSignup = handleSignup;
 window.handleLogout = handleLogout;
 window.renderPlaceholder = renderPlaceholder;
+
+// Expose new handlers
+window.openCreateProjectModal = openCreateProjectModal;
+window.openCreateTaskModal = openCreateTaskModal;
+window.openEditProjectModal = openEditProjectModal;
+window.openEditTaskModal = openEditTaskModal;
+window.handleCreateProject = handleCreateProject;
+window.handleCreateTask = handleCreateTask;
+window.handleUpdateProject = handleUpdateProject;
+window.handleUpdateTask = handleUpdateTask;
+window.closeModal = closeModal;
 window.toggleSelectAll = (type, val) => { /* logic */ };
 window.toggleSelectItem = (type, id, val) => { /* logic */ };
