@@ -515,6 +515,7 @@ async function checkSession() {
         if (!window.supabase || !supabase.auth) {
             console.error('Supabase client not fully initialized');
             navigateTo('login');
+            hideLoader();
             return;
         }
 
@@ -524,6 +525,7 @@ async function checkSession() {
             console.error('Session check error:', error);
             showToast('Authentication check failed. Please login.', 'warning');
             navigateTo('login');
+            hideLoader();
             return;
         }
 
@@ -546,6 +548,16 @@ async function checkSession() {
         console.error('Critical Auth Error:', err);
         showToast('Error connecting to authentication service.', 'error');
         navigateTo('login');
+    } finally {
+        hideLoader();
+    }
+}
+
+function hideLoader() {
+    const loader = document.getElementById('initial-loader');
+    if (loader) {
+        loader.style.opacity = '0';
+        setTimeout(() => loader.remove(), 500);
     }
 }
 
