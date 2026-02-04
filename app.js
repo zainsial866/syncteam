@@ -389,7 +389,7 @@ function filterProjects() {
                 </tr>
             </thead>
             <tbody>
-                ${filtered.map(p => {
+                ${filtered.length > 0 ? filtered.map(p => {
         const progress = getProjectProgress(p.id);
         return `
                     <tr>
@@ -407,7 +407,10 @@ function filterProjects() {
                             ${checkPermission('delete:project') ? `<button class="btn btn-ghost" style="color:var(--status-error);" onclick="confirmDeleteProject(${p.id})"><span class="material-symbols-outlined">delete</span></button>` : ''}
                         </td>
                     </tr>`;
-    }).join('')}
+    }).join('') : `<tr><td colspan="7" style="text-align: center; padding: 3rem; color: var(--text-tertiary);">
+        <p>No projects found. Create your first project to get started!</p>
+        <button class="btn btn-primary mt-1" onclick="openCreateProjectModal()">Create Project</button>
+    </td></tr>`}
             </tbody>
         </table>`;
 }
@@ -455,7 +458,7 @@ function filterTasks(status, btn) {
 
     const filtered = appState.tasks.filter(t => status.toLowerCase() === 'all' || t.status.toLowerCase() === status.toLowerCase());
 
-    tbody.innerHTML = filtered.map(t => {
+    tbody.innerHTML = filtered.length > 0 ? filtered.map(t => {
         const project = appState.projects.find(p => p.id === t.project_id) || { name: 'Unknown' };
         return `
             <tr>
@@ -469,7 +472,7 @@ function filterTasks(status, btn) {
                     <button class="btn btn-ghost" onclick="openEditTaskModal(${t.id})"><span class="material-symbols-outlined">edit</span></button>
                 </td>
             </tr>`;
-    }).join('');
+    }).join('') : `<tr><td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-tertiary);">No tasks found.</td></tr>`;
 }
 
 // ==========================================================================
@@ -936,6 +939,14 @@ async function fetchUserProfile(id) {
         appState.currentUser.name = profile.full_name || appState.currentUser.email;
         appState.currentUser.role = profile.role || 'Member';
         appState.currentUser.avatar_url = profile.avatar_url;
+        updateHeaderUI();
+    }
+}
+
+function updateHeaderUI() {
+    const nameDisplay = document.getElementById('user-name-display');
+    if (nameDisplay) {
+        nameDisplay.textContent = appState.currentUser.name;
     }
 }
 
