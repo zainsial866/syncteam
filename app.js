@@ -1147,9 +1147,17 @@ function initHeader() {
         });
     });
 
-    // Notification Dropdown Toggle
-    window.toggleNotificationDropdown = () => {
+    // Dropdown Toggles
+    window.toggleNotificationDropdown = (e) => {
+        if (e) e.stopPropagation();
+        document.getElementById('user-dropdown')?.classList.remove('show');
         document.getElementById('notification-dropdown')?.classList.toggle('show');
+    };
+
+    window.toggleUserDropdown = (e) => {
+        if (e) e.stopPropagation();
+        document.getElementById('notification-dropdown')?.classList.remove('show');
+        document.getElementById('user-dropdown')?.classList.toggle('show');
     };
 
     // Close dropdowns on outside click
@@ -1157,7 +1165,17 @@ function initHeader() {
         if (!e.target.closest('#notification-btn') && !e.target.closest('#notification-dropdown')) {
             document.getElementById('notification-dropdown')?.classList.remove('show');
         }
+        if (!e.target.closest('#user-profile-btn') && !e.target.closest('#user-dropdown')) {
+            document.getElementById('user-dropdown')?.classList.remove('show');
+        }
     });
+}
+
+function renderSearchResults(container, query) {
+    container.innerHTML = `
+        <div class="mb-2"><h1>Search Results</h1><p style="color: var(--text-secondary);">Found matches for "${sanitizeHTML(query)}"</p></div>
+        <div class="card"><p style="text-align: center; color: var(--text-tertiary); padding: 2rem;">No matches found. Try a different search term.</p></div>
+    `;
 }
 
 function showTooltip(target, text) { /* ... */ }
@@ -1245,9 +1263,21 @@ window.handleLogin = handleLogin;
 window.handleSignup = handleSignup;
 window.handleLogout = handleLogout;
 window.renderPlaceholder = renderPlaceholder;
+window.toggleTheme = toggleTheme;
 
 // Expose new handlers
 window.openCreateProjectModal = openCreateProjectModal;
+window.markAllNotificationsRead = () => {
+    showToast('Notifications cleared', 'success');
+    document.getElementById('notification-badge').style.display = 'none';
+};
+window.handleUpdateProfile = (e) => {
+    e.preventDefault();
+    showToast('Profile updated successfully', 'success');
+};
+window.handleResetPassword = () => {
+    showToast('Password reset link sent to your email', 'info');
+};
 window.openCreateTaskModal = openCreateTaskModal;
 window.openEditProjectModal = openEditProjectModal;
 window.openEditTaskModal = openEditTaskModal;
