@@ -7,28 +7,12 @@
 // 1. Environment & Initialization Fallbacks
 // ==========================================================================
 
-// Fix jQuery $ error - define minimal jQuery if not loaded
-if (typeof $ === 'undefined') {
-    window.$ = window.jQuery = function (selector) {
-        console.warn('jQuery not loaded, using fallback');
-        return {
-            ready: function (cb) {
-                if (document.readyState === 'loading') {
-                    document.addEventListener('DOMContentLoaded', cb);
-                } else {
-                    cb();
-                }
-                return this;
-            },
-            on: function () { return this; },
-            click: function () { return this; },
-            hide: function () { return this; },
-            show: function () { return this; },
-            val: function () { return ''; },
-            html: function () { return this; },
-            text: function () { return ''; }
-        };
-    };
+// Production Safety: Silence verbose logs in production
+if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    console.log = () => { };
+    console.debug = () => { };
+    console.info = () => { };
+    // Keep console.error and console.warn for critical diagnostics but strip details
 }
 
 // ==========================================================================
@@ -92,11 +76,14 @@ const appState = {
 // ==========================================================================
 
 function sanitizeHTML(str) {
-    if (!str && str !== 0) return '';
+    if (str === null || str === undefined) return '';
     const stringValue = String(str);
-    const div = document.createElement('div');
-    div.textContent = stringValue;
-    return div.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    return stringValue
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
 }
 
 function checkPermission(action) {
@@ -1232,7 +1219,7 @@ function renderActivityFeed(container) {
                         </div>
                         <div>
                             <p style="font-weight: 500;">Task Updated: "${sanitizeHTML(t.title)}"</p>
-                            <p style="font-size: 0.85rem; color: var(--text-tertiary);">Status changed to ${t.status}</p>
+                            <p style="font-size: 0.85rem; color: var(--text-tertiary);">Status changed to ${sanitizeHTML(t.status)}</p>
                         </div>
                     </div>
                     <span style="font-size: 0.8rem; color: var(--text-tertiary);">Just now</span>
