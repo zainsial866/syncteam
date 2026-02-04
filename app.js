@@ -914,7 +914,13 @@ window.confirmDeleteProject = async (id) => {
     }
 };
 
+function renderPlaceholderDetails(container, type, id) {
+    renderPlaceholder(container, `${type} Details (ID: ${id})`);
+}
+
 window.renderPlaceholderDetails = renderPlaceholderDetails;
+window.renderProjectDetails = (c, id) => renderPlaceholderDetails(c, 'Project', id);
+window.renderClientDetails = (c, id) => renderPlaceholderDetails(c, 'Client', id);
 
 function renderPlaceholder(container, title) {
     container.innerHTML = `
@@ -1122,13 +1128,13 @@ function initApp() {
         console.log('⚠️ App already initialized, skipping...');
         return;
     }
-    
+
     console.log('🎬 Initializing Application...');
     appState.isInitialized = true;
-    
+
     initTheme();
     initHeader();
-    
+
     // Fail-safe: Always hide loader after 15 seconds (last resort)
     setTimeout(() => {
         if (document.getElementById('initial-loader')) {
