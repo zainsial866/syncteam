@@ -863,32 +863,61 @@ function openInviteMemberModal() {
 async function handleInviteMember(event) {
     event.preventDefault();
     const formData = new FormData(event.target);
-    const newMember = {
-        id: 'temp-' + Date.now(),
-        full_name: formData.get('name'),
-        email: formData.get('email'),
-        role: formData.get('role'),
-        bio: formData.get('bio'),
-        joined_at: new Date().toISOString()
-    };
+    const email = formData.get('email');
+    const name = formData.get('name');
+    const role = formData.get('role');
+    const bio = formData.get('bio');
 
     // UI Feedback
     const submitBtn = event.target.querySelector('button[type="submit"]');
+    const originalBtnHtml = submitBtn ? submitBtn.innerHTML : 'Send Invitation';
     if (submitBtn) {
         submitBtn.disabled = true;
-        submitBtn.innerHTML = '<span class="material-symbols-outlined spinning">progress_activity</span> Inviting...';
+        submitBtn.innerHTML = '<span class="material-symbols-outlined spinning" style="animation: spin 1s linear infinite;">progress_activity</span> Sending magic link...';
     }
 
-    // In a real app, we would send this to Supabase. 
-    // For now, we update local state to show it works.
-    setTimeout(() => {
+    try {
+        // Send Magic Link using Supabase Auth
+        // This sends an email with a login link.
+        const { error } = await supabase.auth.signInWithOtp({
+            email: email,
+            options: {
+                data: {
+                    full_name: name,
+                    role: role,
+                    bio: bio
+                },
+                emailRedirectTo: window.location.origin
+            }
+        });
+
+        if (error) throw error;
+
+        // Mock a pending record for UX
+        const newMember = {
+            id: 'invite-' + Date.now(),
+            full_name: name,
+            email: email,
+            role: role,
+            bio: bio + ' (Invite Pending)',
+            joined_at: new Date().toISOString(),
+            is_pending: true
+        };
         appState.team.unshift(newMember);
-        showToast(`Invitation sent to ${newMember.full_name}`, 'success');
+
+        showToast(`Magic link sent to ${email}!`, 'success');
         closeModal();
         if (appState.currentPage === 'team') {
             navigateTo('team');
         }
-    }, 1000);
+    } catch (error) {
+        console.error('Invitation error:', error);
+        showToast(error.message || 'Failed to send invitation', 'error');
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnHtml;
+        }
+    }
 }
 
 function openMemberActivityModal(memberId) {
