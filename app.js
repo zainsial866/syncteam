@@ -497,9 +497,34 @@ function renderSettings(container) {
                     </form>
                 </div>
             </div>
-            <!-- More tabs... -->
+            <div id="tab-preferences" class="settings-tab" style="display: none;">
+                <div class="card" style="max-width: 600px;">
+                    <h3>General Preferences</h3>
+                    <div class="form-group">
+                        <label class="form-label">Theme</label>
+                        <select class="form-control" onchange="toggleTheme(this.value)">
+                            <option value="dark" ${appState.theme === 'dark' ? 'selected' : ''}>Dark Mode</option>
+                            <option value="light" ${appState.theme === 'light' ? 'selected' : ''}>Light Mode</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div id="tab-security" class="settings-tab" style="display: none;">
+                <div class="card" style="max-width: 600px;">
+                    <h3>Security Settings</h3>
+                    <p style="color: var(--text-secondary); margin-bottom: 1rem;">To change your password, please use the button below to receive a reset link.</p>
+                    <button class="btn btn-tertiary" onclick="handleResetPassword()">Send Reset Link</button>
+                </div>
+            </div>
         </div>
     `;
+}
+
+function toggleTheme(theme) {
+    appState.theme = theme;
+    localStorage.setItem('theme', theme);
+    document.body.classList.toggle('light-mode', theme === 'light');
+    showToast(`Switched to ${theme} theme`, 'success');
 }
 
 function switchSettingsTab(tabId) {
@@ -898,25 +923,128 @@ function renderHelpPage(container) {
 }
 
 function renderReports(container) {
-    renderPlaceholder(container, 'Reports & Analytics');
+    const totalProjects = appState.projects.length;
+    const completedProjects = appState.projects.filter(p => p.status === 'Completed').length;
+    const activeTasks = appState.tasks.filter(t => t.status !== 'Completed').length;
+
+    container.innerHTML = `
+        <div class="mb-2"><h1>Reports & Analytics</h1><p style="color: var(--text-secondary);">Project performance at a glance.</p></div>
+        <div class="grid-4 mb-2">
+            ${renderStatCard(totalProjects, 'Total Projects', 'folder', 'var(--accent-blue)', 'rgba(0, 136, 255, 0.1)')}
+            ${renderStatCard(completedProjects, 'Completed', 'task_alt', 'var(--accent-green)', 'rgba(0, 255, 0, 0.1)')}
+            ${renderStatCard(activeTasks, 'Active Tasks', 'schedule', 'var(--accent-orange)', 'rgba(255, 149, 0, 0.1)')}
+        </div>
+        <div class="grid-4" style="grid-template-columns: 2fr 1fr; gap: 2rem;">
+            <div class="card">
+                <h3>Trend Analysis</h3>
+                <div style="height: 300px;"><canvas id="trendChart"></canvas></div>
+            </div>
+            <div class="card">
+                <h3>Quick Stats</h3>
+                <ul style="color: var(--text-secondary); line-height: 2.2;">
+                    <li class="flex-between"><span>Avg. Progress</span><span style="color: var(--text-primary); font-weight: 600;">68%</span></li>
+                    <li class="flex-between"><span>Active Users</span><span style="color: var(--text-primary); font-weight: 600;">${appState.team.length}</span></li>
+                    <li class="flex-between"><span>Open Tasks</span><span style="color: var(--text-primary); font-weight: 600;">${activeTasks}</span></li>
+                </ul>
+            </div>
+        </div>
+    `;
+    setTimeout(() => initTrendChart(), 50);
 }
 
-function renderSearchResults(container, query) {
-    renderPlaceholder(container, `Search Results for: "${query}"`);
+function initTrendChart() {
+    const canvas = document.getElementById('trendChart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+            datasets: [{
+                label: 'Efficiency',
+                data: [65, 59, 80, 81, 56, 75],
+                borderColor: '#00FF00',
+                tension: 0.4,
+                fill: true,
+                backgroundColor: 'rgba(0, 255, 0, 0.05)'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, grid: { color: '#333' } }, x: { grid: { display: false } } }
+        }
+    });
 }
 
 function renderActivityFeed(container) {
-    renderPlaceholder(container, 'Activity Feed');
+    container.innerHTML = `
+        <div class="mb-2"><h1>Activity Feed</h1><p style="color: var(--text-secondary);">Recent updates across all projects.</p></div>
+        <div class="card">
+            ${appState.tasks.slice(0, 8).map(t => `
+                <div class="flex-between" style="padding: 1rem 0; border-bottom: 1px solid var(--border-color);">
+                    <div style="display: flex; gap: 15px;">
+                        <div style="width: 40px; height: 40px; background: var(--bg-tertiary); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--accent-blue);">
+                            <span class="material-symbols-outlined">edit</span>
+                        </div>
+                        <div>
+                            <p style="font-weight: 500;">Task Updated: "${sanitizeHTML(t.title)}"</p>
+                            <p style="font-size: 0.85rem; color: var(--text-tertiary);">Status changed to ${t.status}</p>
+                        </div>
+                    </div>
+                    <span style="font-size: 0.8rem; color: var(--text-tertiary);">Just now</span>
+                </div>`).join('') || '<p style="text-align: center; padding: 2rem; color: var(--text-tertiary);">No recent activity.</p>'}
+        </div>
+    `;
 }
 
-function renderPlaceholderDetails(container, type, id) {
-    renderPlaceholder(container, `${type} Details (ID: ${id})`);
-}
+window.renderTeam = (container) => {
+    container.innerHTML = `
+        <div class="flex-between mb-2">
+            <h1>Team Directory</h1>
+            <button class="btn btn-primary" onclick="showToast('Inviting team members...', 'info')"><span class="material-symbols-outlined">person_add</span> Invite Member</button>
+        </div>
+        <div class="grid-4">
+            ${appState.team.map(member => `
+                <div class="card text-center">
+                    <div style="width: 64px; height: 64px; background: var(--bg-tertiary); border-radius: 50%; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; border: 2px solid var(--accent-blue); overflow: hidden;">
+                        <span class="material-symbols-outlined" style="font-size: 32px; color: var(--text-tertiary);">person</span>
+                    </div>
+                    <h3 style="margin-bottom: 0.25rem;">${sanitizeHTML(member.full_name || 'Team Member')}</h3>
+                    <p style="font-size: 0.85rem; color: var(--accent-blue); margin-bottom: 0.5rem; font-weight: 600;">${member.role || 'Member'}</p>
+                    <p style="font-size: 0.8rem; color: var(--text-tertiary); line-height: 1.4;">${sanitizeHTML(member.bio || 'No bio available.')}</p>
+                </div>`).join('')}
+        </div>
+    `;
+};
 
-window.renderProjectDetails = (c, id) => renderPlaceholderDetails(c, 'Project', id);
-window.renderClientDetails = (c, id) => renderPlaceholderDetails(c, 'Client', id);
-window.renderTeam = (c) => renderPlaceholder(c, 'Team Directory');
-window.renderClients = (c) => renderPlaceholder(c, 'Client List');
+window.renderClients = (container) => {
+    container.innerHTML = `
+        <div class="flex-between mb-2">
+            <h1>Clients</h1>
+            <button class="btn btn-primary" onclick="showToast('Feature coming soon', 'info')"><span class="material-symbols-outlined">add</span> New Client</button>
+        </div>
+        <div class="card">
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr><th>Client Name</th><th>Email</th><th>Active Projects</th><th class="text-right">Actions</th></tr>
+                    </thead>
+                    <tbody>
+                        ${appState.clients.length > 0 ? appState.clients.map(c => `
+                            <tr>
+                                <td style="font-weight: 600;">${sanitizeHTML(c.name)}</td>
+                                <td>${sanitizeHTML(c.email || 'N/A')}</td>
+                                <td>${appState.projects.filter(p => p.client_id === c.id).length}</td>
+                                <td class="text-right"><button class="btn btn-ghost">Manage</button></td>
+                            </tr>`).join('') : '<tr><td colspan="4" style="text-align: center; padding: 2rem; color: var(--text-tertiary);">No clients found.</td></tr>'}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+};
 
 // ==========================================================================
 // 11. Data Management

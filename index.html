@@ -170,14 +170,33 @@
                         </div>
                     </div>
 
-                    <div style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                    <div style="display: flex; align-items: center; gap: 10px; cursor: pointer; position: relative;"
+                        id="user-profile-btn" onclick="toggleUserDropdown()">
                         <div
                             style="width: 36px; height: 36px; background: var(--bg-tertiary); border-radius: 50%; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 1px solid var(--border-color);">
                             <span class="material-symbols-outlined" style="font-size: 20px;">person</span>
-                            <!-- <img src="avatar.jpg" alt="User" style="width: 100%; height: 100%; object-fit: cover;"> -->
                         </div>
                         <span style="font-weight: 500; font-size: 0.9rem;" id="user-name-display">Demo User</span>
                         <span class="material-symbols-outlined" style="font-size: 18px;">expand_more</span>
+
+                        <!-- User Account Dropdown -->
+                        <div class="dropdown-menu" id="user-dropdown">
+                            <div class="dropdown-header">
+                                <span style="font-weight: 600;" id="dropdown-full-name">Demo User</span>
+                            </div>
+                            <div class="dropdown-content">
+                                <div class="dropdown-item" onclick="navigateTo('settings')">
+                                    <span class="material-symbols-outlined">settings</span> Profile Settings
+                                </div>
+                                <div class="dropdown-item" onclick="navigateTo('help')">
+                                    <span class="material-symbols-outlined">help</span> Help Center
+                                </div>
+                                <div style="border-top: 1px solid var(--border-color); margin: 0.5rem 0;"></div>
+                                <div class="dropdown-item logout-item" onclick="handleLogout()">
+                                    <span class="material-symbols-outlined">logout</span> Log Out
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </header>
