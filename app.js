@@ -81,7 +81,9 @@ const appState = {
         },
         'Member': { permissions: ['create:task', 'edit:task', 'comment'] },
         'Viewer': { permissions: ['view'] }
-    }
+    },
+
+    isInitialized: false
 };
 
 // ==========================================================================
@@ -539,11 +541,13 @@ function switchSettingsTab(tabId) {
 // ==========================================================================
 
 async function checkSession() {
+    if (appState.isCheckingSession) return;
+    appState.isCheckingSession = true;
+
     try {
         if (!window.supabase || !supabase.auth) {
             console.error('Supabase client not fully initialized');
             navigateTo('login');
-            hideLoader();
             return;
         }
 
@@ -551,18 +555,21 @@ async function checkSession() {
 
         if (error) {
             console.error('Session check error:', error);
-            showToast('Authentication check failed. Please login.', 'warning');
             navigateTo('login');
-            hideLoader();
             return;
         }
 
         if (session) {
+            console.log('✅ Session active for:', session.user.email);
             appState.isLoggedIn = true;
             appState.currentUser.id = session.user.id;
             appState.currentUser.email = session.user.email;
-            await fetchUserProfile(session.user.id);
-            await fetchInitialData();
+
+            // Parallel fetch to speed up login
+            await Promise.all([
+                fetchUserProfile(session.user.id),
+                fetchInitialData()
+            ]);
 
             let targetPage = localStorage.getItem('lastPage') || 'dashboard';
             if (['login', 'signup', 'forgot-password'].includes(targetPage)) {
@@ -570,13 +577,14 @@ async function checkSession() {
             }
             navigateTo(targetPage);
         } else {
+            console.log('ℹ️ No active session, redirecting to login');
             navigateTo('login');
         }
     } catch (err) {
         console.error('Critical Auth Error:', err);
-        showToast('Error connecting to authentication service.', 'error');
         navigateTo('login');
     } finally {
+        appState.isCheckingSession = false;
         hideLoader();
     }
 }
@@ -1073,12 +1081,22 @@ async function fetchInitialData() {
 }
 
 async function fetchUserProfile(id) {
-    const { data: profile } = await supabase.from('profiles').select('*').eq('id', id).single();
-    if (profile) {
-        appState.currentUser.name = profile.full_name || appState.currentUser.email;
-        appState.currentUser.role = profile.role || 'Member';
-        appState.currentUser.avatar_url = profile.avatar_url;
-        updateHeaderUI();
+    try {
+        const { data: profile, error } = await supabase.from('profiles').select('*').eq('id', id).maybeSingle();
+        if (error) throw error;
+
+        if (profile) {
+            appState.currentUser.name = profile.full_name || appState.currentUser.email;
+            appState.currentUser.role = profile.role || 'Member';
+            appState.currentUser.avatar_url = profile.avatar_url;
+            updateHeaderUI();
+        } else {
+            console.warn('Profile not found, using default settings');
+            appState.currentUser.name = appState.currentUser.email.split('@')[0];
+            updateHeaderUI();
+        }
+    } catch (e) {
+        console.error('Error fetching profile:', e);
     }
 }
 
