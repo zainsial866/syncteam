@@ -12,7 +12,7 @@ export const config = {
     middleware: [sanitizationMiddleware]
 };
 
-export default async function handler(req, ctx) {
+export const handler = async (req, ctx) => {
     const { email, password } = req.body || {};
 
     if (!email || !password) {

@@ -10,7 +10,7 @@ export const config = {
     flows: ['auth']
 };
 
-export default async function handler(req, ctx) {
+export const handler = async (req, ctx) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) {
         return {

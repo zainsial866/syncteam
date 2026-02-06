@@ -1384,21 +1384,29 @@ window.renderClients = (container) => {
 
 async function fetchInitialData() {
     try {
-        const { data: projects, error: pError } = await supabase.from('projects').select('*');
-        if (pError) console.error('Projects fetch error:', pError);
-        appState.projects = projects || [];
+        const tokenData = JSON.parse(localStorage.getItem('supabase.auth.token'));
+        const accessToken = tokenData?.access_token;
+        const headers = { 'Authorization': `Bearer ${accessToken}` };
 
-        const { data: tasks, error: tError } = await supabase.from('tasks').select('*');
-        if (tError) console.error('Tasks fetch error:', tError);
-        appState.tasks = tasks || [];
+        // Fetch data via proxy
+        const [projectsResp, tasksResp, clientsResp, profilesResp] = await Promise.all([
+            fetch('/api/data/projects', { headers }),
+            fetch('/api/data/tasks', { headers }),
+            fetch('/api/data/clients', { headers }),
+            fetch('/api/data/profiles', { headers })
+        ]);
 
-        const { data: clients, error: cError } = await supabase.from('clients').select('*');
-        if (cError) console.error('Clients fetch error:', cError);
-        appState.clients = clients || [];
+        const [projects, tasks, clients, profiles] = await Promise.all([
+            projectsResp.json(),
+            tasksResp.json(),
+            clientsResp.json(),
+            profilesResp.json()
+        ]);
 
-        const { data: profiles, error: prError } = await supabase.from('profiles').select('*');
-        if (prError) console.error('Profiles fetch error:', prError);
-        appState.team = profiles || [];
+        appState.projects = projects.data || [];
+        appState.tasks = tasks.data || [];
+        appState.clients = clients.data || [];
+        appState.team = profiles.data || [];
     } catch (e) {
         console.error('Data hydration failed:', e);
     }
@@ -1406,8 +1414,16 @@ async function fetchInitialData() {
 
 async function fetchUserProfile(id) {
     try {
-        const { data: profile, error } = await supabase.from('profiles').select('*').eq('id', id).maybeSingle();
-        if (error) throw error;
+        const tokenData = JSON.parse(localStorage.getItem('supabase.auth.token'));
+        const accessToken = tokenData?.access_token;
+
+        const response = await fetch('/api/auth/profile', {
+            headers: { 'Authorization': `Bearer ${accessToken}` }
+        });
+
+        if (!response.ok) throw new Error('Failed to fetch profile');
+
+        const { user: profile } = await response.json();
 
         if (profile) {
             appState.currentUser.name = profile.full_name || appState.currentUser.email;

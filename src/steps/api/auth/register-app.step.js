@@ -11,7 +11,7 @@ export const config = {
     middleware: [sanitizationMiddleware]
 };
 
-export default async function handler(req, ctx) {
+export const handler = async (req, ctx) => {
     const { appName, developerName, email } = req.body || {};
 
     if (!appName || !developerName || !email) {

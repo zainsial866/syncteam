@@ -1,7 +1,7 @@
 {
   "scripts": {
     "dev": "vercel dev",
-    "motia:dev": "cmd /C \"set MOTIA_DISABLE_MEMORY_SERVER=true && set PORT=3005 && motia dev\"",
+    "motia:dev": "cmd /C \"set PORT=3005 && motia dev\"",
     "build": "motia build",
     "vercel-build": "npm run build",
     "start": "motia start"

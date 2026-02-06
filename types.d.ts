@@ -15,10 +15,12 @@ declare module 'motia' {
     'ListUsers': ApiRouteHandler<Record<string, unknown>, unknown, never>
     'HelloWorld': ApiRouteHandler<Record<string, unknown>, unknown, never>
     'HealthCheck': ApiRouteHandler<Record<string, unknown>, unknown, never>
-    'GetSession': ApiRouteHandler<Record<string, unknown>, unknown, never>
-    'Login': ApiRouteHandler<Record<string, unknown>, unknown, never>
     'Signup': ApiRouteHandler<Record<string, unknown>, unknown, never>
+    'GetSession': ApiRouteHandler<Record<string, unknown>, unknown, never>
     'RegisterApp': ApiRouteHandler<Record<string, unknown>, unknown, never>
+    'Login': ApiRouteHandler<Record<string, unknown>, unknown, never>
+    'GetUserProfile': ApiRouteHandler<Record<string, unknown>, unknown, never>
+    'DataProxy': ApiRouteHandler<Record<string, unknown>, unknown, never>
   }
     
 }
