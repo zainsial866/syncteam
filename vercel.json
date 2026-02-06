@@ -1,12 +1,22 @@
 {
   "version": 2,
+  "functions": {
+    "src/index.js": {
+      "runtime": "vercel-node@latest",
+      "memory": 1024
+    }
+  },
   "rewrites": [
     {
       "source": "/api/(.*)",
       "destination": "/src/index.js"
     },
     {
-      "source": "/(.*)",
+      "source": "/",
+      "destination": "/src/public/index.html"
+    },
+    {
+      "source": "/((?!api/).*)",
       "destination": "/src/public/$1"
     }
   ],
