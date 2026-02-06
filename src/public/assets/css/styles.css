@@ -959,13 +959,15 @@ td .table-checkbox {
 }
 
 /* Lightbox/Preview Modal */
-.preview-overlay {
-  position: fixed;
+.preview.modal-overlay {
+  position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.9);
+  background: rgba(0, 0, 0, 0.8);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
   z-index: 3000;
   display: none;
   align-items: center;
@@ -1229,41 +1231,43 @@ input:checked+.slider {
 input:checked+.slider:before {
   transform: translateX(22px);
 }
+
 /* ==========================================================================
    Auth Mode (Login/Signup)
    ========================================================================== */
 body.auth-mode .sidebar,
 body.auth-mode header {
-    display: none !important;
+  display: none !important;
 }
 
 body.auth-mode .main-content {
-    margin-left: 0;
+  margin-left: 0;
 }
 
 body.auth-mode .page-content {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-    background-color: var(--bg-primary); /* Ensure background is solid */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background-color: var(--bg-primary);
+  /* Ensure background is solid */
 }
 
 body.auth-mode .auth-container {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 body.auth-mode .auth-card {
-    width: 100%;
-    max-width: 440px;
-    padding: 2.5rem;
-    box-shadow: var(--shadow-lg);
-    border: 1px solid var(--border-color);
+  width: 100%;
+  max-width: 440px;
+  padding: 2.5rem;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border-color);
 }
 
 
@@ -1293,8 +1297,15 @@ body.auth-mode .auth-card {
 }
 
 @keyframes dropdownFade {
-  from { opacity: 0; transform: scale(0.95) translateY(-10px); }
-  to { opacity: 1; transform: scale(1) translateY(0); }
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
 .dropdown-header {
@@ -1374,13 +1385,28 @@ body.auth-mode .auth-card {
   border-left: 4px solid var(--status-info);
 }
 
-.toast.success { border-left-color: var(--status-success); }
-.toast.error { border-left-color: var(--status-error); }
-.toast.warning { border-left-color: var(--status-warning); }
+.toast.success {
+  border-left-color: var(--status-success);
+}
+
+.toast.error {
+  border-left-color: var(--status-error);
+}
+
+.toast.warning {
+  border-left-color: var(--status-warning);
+}
 
 @keyframes toastSlideIn {
-  from { transform: translateX(100%); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 /* ==========================================================================
@@ -1410,6 +1436,7 @@ body.auth-mode .auth-card {
   width: 100%;
   height: 100%;
   background: rgba(0, 0, 0, 0.8);
+  -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
 }
 
@@ -1428,8 +1455,15 @@ body.auth-mode .auth-card {
 }
 
 @keyframes modalPop {
-  from { transform: scale(0.9); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 .modal-header {
@@ -1452,4 +1486,167 @@ body.auth-mode .auth-card {
   display: flex;
   justify-content: flex-end;
   gap: 1rem;
+}
+
+/* ==========================================================================
+   Extracted UI Classes & Overrides
+   ========================================================================== */
+#initial-loader {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: var(--bg-primary);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.loader-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid var(--bg-tertiary);
+  border-top-color: var(--accent-green);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.loader-text {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.sidebar-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sidebar-nav {
+  flex: 1;
+  padding-top: 1rem;
+}
+
+.nav-icon {
+  margin-right: 12px;
+}
+
+.sidebar-footer {
+  padding: 1rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.search-container {
+  position: relative;
+}
+
+.search-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-tertiary);
+}
+
+.search-input {
+  padding-left: 36px;
+  width: 250px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.notification-wrapper {
+  position: relative;
+}
+
+.notification-badge-style {
+  display: none;
+  width: 18px;
+  height: 18px;
+  background: var(--status-error);
+  color: white;
+  border-radius: 50%;
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  font-size: 10px;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+
+.user-profile-btn-style {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  position: relative;
+}
+
+.avatar-wrapper {
+  width: 36px;
+  height: 36px;
+  background: var(--bg-tertiary);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+}
+
+.user-name-text {
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.main-spinner-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+.main-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid var(--bg-tertiary);
+  border-top-color: var(--accent-green);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.fw-600 {
+  font-weight: 600;
+}
+
+.no-notifications {
+  padding: 1rem;
+  text-align: center;
+  color: var(--text-tertiary);
+}
+
+.nav-item-logout {
+  color: var(--status-error);
+}
+
+.btn-sm {
+  font-size: 0.8rem;
+  padding: 2px 6px;
 }

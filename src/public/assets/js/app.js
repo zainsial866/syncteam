@@ -8,11 +8,13 @@
 // ==========================================================================
 
 // Production Safety: Silence verbose logs in production
-if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+if (window.location.hostname !== 'localhost' &&
+    window.location.hostname !== '127.0.0.1' &&
+    !window.location.hostname.includes('vercel.app')) { // Allow logs on Vercel preview/production for debugging
     console.log = () => { };
     console.debug = () => { };
     console.info = () => { };
-    // Keep console.error and console.warn for critical diagnostics but strip details
+    // Keep console.error and console.warn for critical diagnostics
 }
 
 // ==========================================================================
@@ -544,19 +546,27 @@ async function checkSession() {
     appState.isCheckingSession = true;
 
     try {
+        // Wait for Supabase to be ready if not already
+        if (!window.supabaseClientInitialized) {
+            console.log('⏳ Waiting for Supabase client...');
+            await new Promise((resolve, reject) => {
+                const timeout = setTimeout(() => reject(new Error('Supabase init timeout')), 5000);
+                document.addEventListener('supabase-ready', () => {
+                    clearTimeout(timeout);
+                    resolve();
+                }, { once: true });
+            });
+        }
+
         if (!window.supabase || !supabase.auth) {
-            console.error('Supabase client not fully initialized');
+            console.error('❌ Supabase client not fully initialized');
             navigateTo('login');
             return;
         }
 
         const { data: { session }, error } = await supabase.auth.getSession();
 
-        if (error) {
-            console.error('Session check error:', error);
-            navigateTo('login');
-            return;
-        }
+        if (error) throw error;
 
         if (session) {
             console.log('✅ Session active for:', session.user.email);
@@ -564,7 +574,6 @@ async function checkSession() {
             appState.currentUser.id = session.user.id;
             appState.currentUser.email = session.user.email;
 
-            // Parallel fetch to speed up login
             await Promise.all([
                 fetchUserProfile(session.user.id),
                 fetchInitialData()
@@ -576,7 +585,7 @@ async function checkSession() {
             }
             navigateTo(targetPage);
         } else {
-            console.log('ℹ️ No active session, redirecting to login');
+            console.log('ℹ️ No active session');
             navigateTo('login');
         }
     } catch (err) {
@@ -1582,7 +1591,7 @@ function renderSignup(container) {
                     <h2>Create Account</h2>
                     <p style="color: var(--text-secondary);">Start managing your projects today</p>
                 </div>
-                <form onsubmit="handleSignup(event)"> <!-- handleSignup is missing! Need to add it too -->
+                <form onsubmit="handleSignup(event)">
                     <div class="form-group"><label class="form-label">Full Name</label><input type="text" name="name" class="form-control" placeholder="John Doe" required></div>
                     <div class="form-group"><label class="form-label">Email Address</label><input type="email" name="email" class="form-control" required></div>
                     <div class="form-group"><label class="form-label">Password</label><input type="password" name="password" class="form-control" placeholder="Min. 6 characters" minlength="6" required></div>

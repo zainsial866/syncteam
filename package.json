@@ -1,0 +1,19 @@
+{
+  "scripts": {
+    "dev": "vercel dev",
+    "motia:dev": "cmd /C \"set MOTIA_DISABLE_MEMORY_SERVER=true && set PORT=3005 && motia dev\"",
+    "build": "motia build",
+    "vercel-build": "npm run build",
+    "start": "motia start"
+  },
+  "type": "module",
+  "dependencies": {
+    "@vercel/node": "latest",
+    "dompurify": "^3.3.1",
+    "express-rate-limit": "^8.2.1",
+    "express-validator": "^7.3.1",
+    "helmet": "^8.1.0",
+    "jsdom": "^28.0.0",
+    "motia": "latest"
+  }
+}

@@ -21,7 +21,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <!-- Global Styles -->
-    <link rel="stylesheet" href="styles.css?v=3">
+    <link rel="stylesheet" href="assets/css/styles.css?v=3">
     <style>
         /* Small inline style for logo alignment to ensure it looks good immediately */
         .logo-area {
@@ -54,70 +54,66 @@
 
 <body>
 
-    <div id="initial-loader"
-        style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: var(--bg-primary); z-index: 9999; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 1rem;">
-        <div
-            style="width: 48px; height: 48px; border: 4px solid var(--bg-tertiary); border-top-color: var(--accent-green); border-radius: 50%; animation: spin 1s linear infinite;">
-        </div>
-        <h3 style="color: var(--text-secondary); font-weight: 500;">SyncTeam</h3>
+    <div id="initial-loader">
+        <div class="loader-spinner"></div>
+        <h3 class="loader-text">SyncTeam</h3>
     </div>
 
     <div class="app-container">
         <!-- Sidebar Navigation -->
         <aside class="sidebar" id="sidebar">
-            <div
-                style="padding: 1.5rem; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between;">
+            <div class="sidebar-header">
                 <div class="logo-area">
                     <div class="logo-icon">ST</div>
                     <span>SyncTeam</span>
                 </div>
                 <!-- Mobile Close Button -->
-                <button class="btn btn-ghost" id="sidebar-close" style="padding: 4px; display: none;">
+                <button class="btn btn-ghost" id="sidebar-close">
                     <span class="material-symbols-outlined">close</span>
                 </button>
             </div>
 
-            <nav style="flex: 1; padding-top: 1rem;">
+            <nav class="sidebar-nav">
                 <ul id="nav-list">
                     <li class="nav-item active" data-page="dashboard">
-                        <span class="material-symbols-outlined" style="margin-right: 12px;">dashboard</span>
+                        <span class="material-symbols-outlined nav-icon">dashboard</span>
                         Dashboard
                     </li>
                     <li class="nav-item" data-page="projects">
-                        <span class="material-symbols-outlined" style="margin-right: 12px;">folder</span>
+                        <span class="material-symbols-outlined nav-icon">folder</span>
                         Projects
                     </li>
                     <li class="nav-item" data-page="tasks">
-                        <span class="material-symbols-outlined" style="margin-right: 12px;">check_circle</span>
+                        <span class="material-symbols-outlined nav-icon">check_circle</span>
                         Tasks
                     </li>
                     <li class="nav-item" data-page="team">
-                        <span class="material-symbols-outlined" style="margin-right: 12px;">group</span>
+                        <span class="material-symbols-outlined nav-icon">group</span>
                         Team
                     </li>
                     <li class="nav-item" data-page="clients">
-                        <span class="material-symbols-outlined" style="margin-right: 12px;">handshake</span>
+                        <span class="material-symbols-outlined nav-icon">handshake</span>
                         Clients
                     </li>
                     <li class="nav-item" data-page="reports">
-                        <span class="material-symbols-outlined" style="margin-right: 12px;">bar_chart</span>
+                        <span class="material-symbols-outlined nav-icon">bar_chart</span>
                         Reports
                     </li>
                     <li class="nav-item" data-page="activity">
-                        <span class="material-symbols-outlined" style="margin-right: 12px;">history</span>
+                        <span class="material-symbols-outlined nav-icon">history</span>
                         Activity
                     </li>
                 </ul>
             </nav>
 
-            <div style="padding: 1rem; border-top: 1px solid var(--border-color);">
+            <div class="sidebar-footer">
                 <ul id="nav-list-bottom">
                     <li class="nav-item" data-page="settings">
-                        <span class="material-symbols-outlined" style="margin-right: 12px;">settings</span>
+                        <span class="material-symbols-outlined nav-icon">settings</span>
                         Settings
                     </li>
-                    <li class="nav-item" data-page="logout" style="color: var(--status-error);">
-                        <span class="material-symbols-outlined" style="margin-right: 12px;">logout</span>
+                    <li class="nav-item nav-item-logout" data-page="logout">
+                        <span class="material-symbols-outlined nav-icon">logout</span>
                         Logout
                     </li>
                 </ul>
@@ -128,39 +124,35 @@
         <div class="main-content">
             <!-- Header -->
             <header>
-                <div style="display: flex; align-items: center; gap: 1rem;">
-                    <button class="btn btn-ghost" id="sidebar-toggle" style="padding: 4px;">
+                <div class="header-left">
+                    <button class="btn btn-ghost" id="sidebar-toggle">
                         <span class="material-symbols-outlined">menu</span>
                     </button>
                     <!-- Search Bar -->
-                    <div style="position: relative;" class="search-bar">
-                        <span class="material-symbols-outlined"
-                            style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-tertiary);">search</span>
-                        <input type="text" placeholder="Search..." class="form-control"
-                            style="padding-left: 36px; width: 250px;">
+                    <div class="search-container search-bar">
+                        <span class="material-symbols-outlined search-icon">search</span>
+                        <input type="text" placeholder="Search..." class="form-control search-input">
                     </div>
                 </div>
 
-                <div style="display: flex; align-items: center; gap: 1rem;">
-                    <div style="position: relative;">
-                        <button class="btn btn-ghost" id="notification-btn" onclick="toggleNotificationDropdown(event)"
-                            style="padding: 8px; border: none; position: relative;">
+                <div class="header-right">
+                    <div class="notification-wrapper">
+                        <button class="btn btn-ghost" id="notification-btn" onclick="toggleNotificationDropdown(event)">
                             <span class="material-symbols-outlined">notifications</span>
                             <!-- Notification Dot/Badge -->
-                            <span id="notification-badge"
-                                style="display: none; width: 18px; height: 18px; background: var(--status-error); color: white; border-radius: 50%; position: absolute; top: -2px; right: -2px; font-size: 10px; align-items: center; justify-content: center; font-weight: 700;"></span>
+                            <span id="notification-badge" class="notification-badge-style"></span>
                         </button>
 
                         <!-- Notification Dropdown -->
                         <div class="dropdown-menu" id="notification-dropdown">
                             <div class="dropdown-header">
-                                <span style="font-weight: 600;">Notifications</span>
-                                <button class="btn btn-ghost" style="font-size: 0.8rem; padding: 2px 6px;"
-                                    onclick="markAllNotificationsRead()">Mark all read</button>
+                                <span class="fw-600">Notifications</span>
+                                <button class="btn btn-ghost btn-sm" onclick="markAllNotificationsRead()">Mark all
+                                    read</button>
                             </div>
                             <div class="dropdown-content" id="notification-list">
                                 <!-- Populated by JS -->
-                                <div style="padding: 1rem; text-align: center; color: var(--text-tertiary);">No new
+                                <div class="no-notifications">No new
                                     notifications</div>
                             </div>
                             <div class="dropdown-footer"
@@ -204,25 +196,17 @@
             <!-- Dynamic Page Content -->
             <main id="app-content" class="page-content">
                 <!-- Content injected via app.js -->
-                <div style="display: flex; align-items: center; justify-content: center; height: 100%;">
-                    <div class="spinner"
-                        style="width: 40px; height: 40px; border: 4px solid var(--bg-tertiary); border-top-color: var(--accent-green); border-radius: 50%; animation: spin 1s linear infinite;">
-                    </div>
+                <div class="main-spinner-container">
+                    <div class="spinner main-spinner"></div>
                 </div>
             </main>
         </div>
     </div>
 
-    <!-- Global Modal Container -->
-    <div id="modal-overlay" class="modal-overlay">
-        <!-- Modals injected here -->
-    </div>
 
     <!-- Bulk Actions Bar -->
     <div id="bulk-actions-bar" class="bulk-actions-bar"></div>
 
-    <!-- Global Toast Container -->
-    <div id="toast-container" class="toast-container"></div>
 
     <style>
         @keyframes spin {
@@ -269,10 +253,10 @@
     <div id="modal-container" class="modal-container"></div>
 
     <!-- Supabase Client Config -->
-    <script src="supabaseClient.js?v=3"></script>
+    <script src="assets/js/supabaseClient.js?v=3"></script>
 
     <!-- Main Logic -->
-    <script src="app.js?v=3"></script>
+    <script src="assets/js/app.js?v=3"></script>
 </body>
 
 </html>

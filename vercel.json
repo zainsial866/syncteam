@@ -1,11 +1,17 @@
 {
-  "routes": [
+  "version": 2,
+  "rewrites": [
     {
-      "handle": "filesystem"
+      "source": "/api/(.*)",
+      "destination": "/src/index.js"
     },
     {
-      "src": "/(.*)",
-      "dest": "/index.html"
+      "source": "/(.*)",
+      "destination": "/src/public/$1"
     }
-  ]
+  ],
+  "env": {
+    "MOTIA_ENV": "production",
+    "NODE_ENV": "production"
+  }
 }
