@@ -546,48 +546,51 @@ async function checkSession() {
     appState.isCheckingSession = true;
 
     try {
-        // Wait for Supabase to be ready if not already
-        if (!window.supabaseClientInitialized) {
-            console.log('⏳ Waiting for Supabase client...');
-            await new Promise((resolve, reject) => {
-                const timeout = setTimeout(() => reject(new Error('Supabase init timeout')), 5000);
-                document.addEventListener('supabase-ready', () => {
-                    clearTimeout(timeout);
-                    resolve();
-                }, { once: true });
-            });
-        }
-
-        if (!window.supabase || !supabase.auth) {
-            console.error('❌ Supabase client not fully initialized');
+        // Check session via backend proxy
+        const sessionToken = localStorage.getItem('supabase.auth.token');
+        if (!sessionToken) {
+            console.log('ℹ️ No token found in localStorage');
             navigateTo('login');
             return;
         }
 
-        const { data: { session }, error } = await supabase.auth.getSession();
+        const tokenData = JSON.parse(sessionToken);
+        const accessToken = tokenData.access_token || tokenData.session?.access_token;
 
-        if (error) throw error;
-
-        if (session) {
-            console.log('✅ Session active for:', session.user.email);
-            appState.isLoggedIn = true;
-            appState.currentUser.id = session.user.id;
-            appState.currentUser.email = session.user.email;
-
-            await Promise.all([
-                fetchUserProfile(session.user.id),
-                fetchInitialData()
-            ]);
-
-            let targetPage = localStorage.getItem('lastPage') || 'dashboard';
-            if (['login', 'signup', 'forgot-password'].includes(targetPage)) {
-                targetPage = 'dashboard';
-            }
-            navigateTo(targetPage);
-        } else {
-            console.log('ℹ️ No active session');
+        if (!accessToken) {
+            console.log('ℹ️ No access token found');
             navigateTo('login');
+            return;
         }
+
+        const response = await fetch('/api/auth/session', {
+            headers: { 'Authorization': `Bearer ${accessToken}` }
+        });
+
+        if (!response.ok) {
+            console.log('ℹ️ Backend session check failed');
+            localStorage.removeItem('supabase.auth.token');
+            navigateTo('login');
+            return;
+        }
+
+        const { user } = await response.json();
+
+        console.log('✅ Session active for:', user.email);
+        appState.isLoggedIn = true;
+        appState.currentUser.id = user.id;
+        appState.currentUser.email = user.email;
+
+        await Promise.all([
+            fetchUserProfile(user.id),
+            fetchInitialData()
+        ]);
+
+        let targetPage = localStorage.getItem('lastPage') || 'dashboard';
+        if (['login', 'signup', 'forgot-password'].includes(targetPage)) {
+            targetPage = 'dashboard';
+        }
+        navigateTo(targetPage);
     } catch (err) {
         console.error('Critical Auth Error:', err);
         navigateTo('login');
@@ -621,18 +624,20 @@ async function handleLogin(event) {
     btn.innerHTML = '<span class="material-symbols-outlined spinning" style="font-size: 18px;">progress_activity</span> Signing In...';
 
     try {
-        if (!window.supabase || !supabase.auth) {
-            throw new Error('Database connection not ready. Please refresh.');
-        }
+        const response = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+        });
 
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        const result = await response.json();
 
-        if (error) {
-            console.error('Login error:', error);
-            let userMessage = error.message;
-            if (error.message.includes('Email not confirmed')) {
+        if (!response.ok) {
+            console.error('Login error:', result.error);
+            let userMessage = result.error;
+            if (result.error.includes('Email not confirmed')) {
                 userMessage = 'Please verify your email address before logging in.';
-            } else if (error.message.includes('Invalid login credentials')) {
+            } else if (result.error.includes('Invalid login credentials')) {
                 userMessage = 'Incorrect email or password. Please try again.';
             }
             showToast(userMessage, 'error');
@@ -642,6 +647,11 @@ async function handleLogin(event) {
         }
 
         showToast('Login successful', 'success');
+
+        // Store session data returned from backend
+        if (result.session) {
+            localStorage.setItem('supabase.auth.token', JSON.stringify(result.session));
+        }
 
         // Wait for session to be fully established and UI to update
         await checkSession();
@@ -670,25 +680,25 @@ async function handleSignup(event) {
     btn.innerHTML = '<span class="material-symbols-outlined spinning" style="font-size: 18px;">progress_activity</span> Creating Account...';
 
     try {
-        const { data, error } = await supabase.auth.signUp({
-            email,
-            password,
-            options: {
-                data: { full_name: name, role: role },
-                emailRedirectTo: window.location.origin
-            }
+        const response = await fetch('/api/auth/signup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, email, password, role })
         });
 
-        if (error) {
-            showToast(error.message, 'error');
+        const result = await response.json();
+
+        if (!response.ok) {
+            showToast(result.error || 'Failed to create account', 'error');
             btn.disabled = false;
             btn.innerHTML = 'Create Account';
             return;
         }
 
-        // If the user is automatically logged in (depends on Supabase settings)
-        if (data.session) {
+        // If the user is automatically logged in
+        if (result.session) {
             showToast('Account created and logged in!', 'success');
+            localStorage.setItem('supabase.auth.token', JSON.stringify(result.session));
             await checkSession();
         } else {
             showToast('Account created! Please check your email for a verification link.', 'success');
@@ -706,9 +716,10 @@ async function handleSignup(event) {
 
 function handleLogout() {
     if (confirm('Logout?')) {
-        supabase.auth.signOut();
+        localStorage.removeItem('supabase.auth.token');
         appState.isLoggedIn = false;
         navigateTo('login');
+        showToast('Logged out successfully', 'info');
     }
 }
 
