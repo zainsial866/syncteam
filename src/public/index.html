@@ -162,14 +162,13 @@
                         </div>
                     </div>
 
-                    <div style="display: flex; align-items: center; gap: 10px; cursor: pointer; position: relative;"
-                        id="user-profile-btn" onclick="toggleUserDropdown(event)">
-                        <div
-                            style="width: 36px; height: 36px; background: var(--bg-tertiary); border-radius: 50%; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 1px solid var(--border-color);">
-                            <span class="material-symbols-outlined" style="font-size: 20px;">person</span>
+                    <div class="user-profile-btn user-profile-btn-style" id="user-profile-btn"
+                        onclick="toggleUserDropdown(event)">
+                        <div class="avatar-wrapper">
+                            <span class="material-symbols-outlined person-icon">person</span>
                         </div>
-                        <span style="font-weight: 500; font-size: 0.9rem;" id="user-name-display">Demo User</span>
-                        <span class="material-symbols-outlined" style="font-size: 18px;">expand_more</span>
+                        <span class="user-name-text" id="user-name-display">Demo User</span>
+                        <span class="material-symbols-outlined expand-icon">expand_more</span>
 
                         <!-- User Account Dropdown -->
                         <div class="dropdown-menu" id="user-dropdown">
