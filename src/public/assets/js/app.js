@@ -634,15 +634,18 @@ async function handleLogin(event) {
 
         if (!response.ok) {
             console.error('Login error:', result.error);
-            let userMessage = result.error;
-            if (result.error.includes('Email not confirmed')) {
-                userMessage = 'Please verify your email address before logging in.';
-            } else if (result.error.includes('Invalid login credentials')) {
+            let userMessage = result.error || 'Login failed';
+
+            // Map common Supabase errors to friendly messages
+            if (userMessage.includes('Invalid login credentials')) {
                 userMessage = 'Incorrect email or password. Please try again.';
+            } else if (userMessage.includes('Email not confirmed')) {
+                userMessage = 'Please verify your email address before logging in.';
             }
+
             showToast(userMessage, 'error');
             btn.disabled = false;
-            btn.innerHTML = 'Sign In';
+            btn.innerHTML = 'Sign in';
             return;
         }
 
@@ -1576,62 +1579,137 @@ function renderBreadcrumbs(container, items) {
 // Auth Views
 function renderLogin(container) {
     container.innerHTML = `
-        <div class="auth-container">
-            <div class="card auth-card">
-                <div class="text-center mb-2">
-                    <div style="background: var(--gradient-primary); width: 48px; height: 48px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; color: #000; font-weight: 800; font-size: 24px; margin-bottom: 1rem;">ST</div>
-                    <h2>Welcome Back</h2>
-                    <p style="color: var(--text-secondary);">Sign in to continue to SyncTeam</p>
+        <div class="auth-screen">
+            <div class="auth-left">
+                <div class="auth-brand">
+                    <div class="auth-logo-icon">ST</div>
+                    <span>SyncTeam</span>
                 </div>
-                <form onsubmit="handleLogin(event)">
-                    <div class="form-group">
-                        <label class="form-label">Email Address</label>
-                        <input type="email" name="email" class="form-control" placeholder="name@company.com" required>
-                    </div>
-                    <div class="form-group">
-                        <div class="flex-between">
-                            <label class="form-label">Password</label>
-                            <a href="javascript:void(0)" onclick="navigateTo('forgot-password')" style="font-size: 0.8rem;">Forgot password?</a>
-                        </div>
-                        <input type="password" name="password" class="form-control" placeholder="••••••••" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary w-100" style="padding: 0.75rem;">Sign In</button>
+                
+                <div class="auth-card-clean">
+                    <h1 class="auth-title">Welcome Back!</h1>
+                    <p class="auth-subtitle">Please enter login details below</p>
                     
-                    <div style="margin-top: 1.5rem; text-align: center; font-size: 0.9rem;">
-                        <p>Don't have an account? <a href="javascript:void(0)" onclick="navigateTo('signup')" style="font-weight: 600;">Create account</a></p>
+                    <form onsubmit="handleLogin(event)">
+                        <div class="form-floating">
+                            <label>Email</label>
+                            <input type="email" name="email" class="form-control" placeholder="Enter the email" required>
+                        </div>
+                        
+                        <div class="form-floating">
+                            <div class="flex-between">
+                                <label>Password</label>
+                                <a href="javascript:void(0)" onclick="navigateTo('forgot-password')" style="font-size: 0.85rem; color: var(--text-tertiary);">Forgot password?</a>
+                            </div>
+                            <input type="password" name="password" class="form-control" placeholder="Enter the Password" required>
+                        </div>
+                        
+                        <button type="submit" class="btn-auth-primary">Sign in</button>
+                    </form>
+                    
+                    <div class="divider-text">Or continue</div>
+                    
+                    <button class="google-btn">
+                        <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/google/google-original.svg" width="20" height="20">
+                        Log in with Google
+                    </button>
+                    
+                    <div class="auth-footer">
+                        Don't have an account? <a href="javascript:void(0)" onclick="navigateTo('signup')">Sign Up</a>
                     </div>
-                </form>
+                </div>
             </div>
-            <div style="margin-top: 2rem; display: flex; gap: 2rem; justify-content: center; font-size: 0.9rem; color: var(--text-secondary);">
-                <a href="javascript:void(0)" onclick="renderPlaceholder(document.getElementById('app-content'), 'About Us')">About Us</a>
-                <a href="javascript:void(0)" onclick="renderPlaceholder(document.getElementById('app-content'), 'Contact Support')">Contact Us</a>
-                <a href="javascript:void(0)" onclick="renderPlaceholder(document.getElementById('app-content'), 'Feedback')">Feedback</a>
+            
+            <div class="auth-right">
+                <div class="auth-visual-content">
+                    <div style="position: relative;">
+                        <!-- Illustrative elements similar to Tasky image -->
+                        <div style="background: rgba(255,255,255,0.1); padding: 2rem; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.1);">
+                            <div style="background: white; border-radius: 12px; padding: 1.5rem; width: 300px; color: #333; text-align: left;">
+                                <div style="display:flex; justify-content: space-between; margin-bottom: 1rem;">
+                                    <span style="font-weight: 700; font-size: 1.2rem;">Tasks</span>
+                                    <span class="material-symbols-outlined" style="color: #3B31FF;">assignment</span>
+                                </div>
+                                <div style="display:flex; flex-direction: column; gap: 10px;">
+                                    <div style="display:flex; align-items: center; gap: 10px; font-size: 0.9rem;">
+                                        <span class="material-symbols-outlined" style="color: #4CAF50;">check_circle</span> Create Landing Page
+                                    </div>
+                                    <div style="display:flex; align-items: center; gap: 10px; font-size: 0.9rem;">
+                                        <span class="material-symbols-outlined" style="color: #4CAF50;">check_circle</span> Integrate API
+                                    </div>
+                                    <div style="display:flex; align-items: center; gap: 10px; font-size: 0.9rem;">
+                                        <span class="material-symbols-outlined" style="color: #A19BFF;">radio_button_unchecked</span> Beta Testing
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <p class="auth-visual-text">Manage your task in an easy and more efficient way with SyncTeam...</p>
+                    
+                    <div class="auth-dots">
+                        <div class="auth-dot"></div>
+                        <div class="auth-dot active"></div>
+                        <div class="auth-dot"></div>
+                    </div>
+                </div>
             </div>
         </div>`;
 }
 
 function renderSignup(container) {
     container.innerHTML = `
-        <div class="auth-container">
-            <div class="card auth-card">
-                <div class="text-center mb-2">
-                    <h2>Create Account</h2>
-                    <p style="color: var(--text-secondary);">Start managing your projects today</p>
+        <div class="auth-screen">
+            <div class="auth-left">
+                <div class="auth-brand">
+                    <div class="auth-logo-icon">ST</div>
+                    <span>SyncTeam</span>
                 </div>
-                <form onsubmit="handleSignup(event)">
-                    <div class="form-group"><label class="form-label">Full Name</label><input type="text" name="name" class="form-control" placeholder="John Doe" required></div>
-                    <div class="form-group"><label class="form-label">Email Address</label><input type="email" name="email" class="form-control" required></div>
-                    <div class="form-group"><label class="form-label">Password</label><input type="password" name="password" class="form-control" placeholder="Min. 6 characters" minlength="6" required></div>
-                    <div class="form-group">
-                        <label class="form-label">I am a...</label>
-                        <select name="role" class="form-control">
-                            <option value="Project Manager">Project Manager</option>
-                            <option value="Member">Team Member</option>
-                        </select>
+                
+                <div class="auth-card-clean">
+                    <h1 class="auth-title">Join Us!</h1>
+                    <p class="auth-subtitle">Create your account to start managing tasks</p>
+                    
+                    <form onsubmit="handleSignup(event)">
+                        <div class="form-floating">
+                            <label>Full Name</label>
+                            <input type="text" name="name" class="form-control" placeholder="Enter your name" required>
+                        </div>
+                        
+                        <div class="form-floating">
+                            <label>Email</label>
+                            <input type="email" name="email" class="form-control" placeholder="Enter your email" required>
+                        </div>
+                        
+                        <div class="form-floating">
+                            <label>Password</label>
+                            <input type="password" name="password" class="form-control" placeholder="Min. 6 characters" minlength="6" required>
+                        </div>
+                        
+                        <div class="form-floating">
+                            <label>I am a...</label>
+                            <select name="role" class="form-control">
+                                <option value="Project Manager">Project Manager</option>
+                                <option value="Member">Team Member</option>
+                            </select>
+                        </div>
+                        
+                        <button type="submit" class="btn-auth-primary">Create Account</button>
+                    </form>
+                    
+                    <div class="auth-footer">
+                        Already have an account? <a href="javascript:void(0)" onclick="navigateTo('login')">Log In</a>
                     </div>
-                    <button type="submit" class="btn btn-primary w-100" style="padding: 0.75rem;">Create Account</button>
-                    <p class="mt-2 text-center">Already have an account? <a href="javascript:void(0)" onclick="navigateTo('login')">Log In</a></p>
-                </form>
+                </div>
+            </div>
+            
+            <div class="auth-right">
+                <div class="auth-visual-content">
+                    <div style="background: rgba(255,255,255,0.1); padding: 3rem; border-radius: 30px;">
+                        <span class="material-symbols-outlined" style="font-size: 150px; color: white;">rocket_launch</span>
+                    </div>
+                    <p class="auth-visual-text">Bootstrap your professional workflow in minutes with SyncTeam tools.</p>
+                </div>
             </div>
         </div>`;
 }
