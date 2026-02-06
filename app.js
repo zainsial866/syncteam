@@ -78,12 +78,9 @@ const appState = {
 function sanitizeHTML(str) {
     if (str === null || str === undefined) return '';
     const stringValue = String(str);
-    return stringValue
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
+    const div = document.createElement('div');
+    div.textContent = stringValue;
+    return div.innerHTML;
 }
 
 function checkPermission(action) {
@@ -387,13 +384,16 @@ function filterProjects() {
             <tbody>
                 ${filtered.length > 0 ? filtered.map(p => {
         const progress = getProjectProgress(p.id);
+        const nameClean = sanitizeHTML(p.name);
+        const clientClean = sanitizeHTML(p.client_name || 'N/A');
+        const statusClean = sanitizeHTML(p.status);
         return `
                     <tr>
                         <td><input type="checkbox" onchange="toggleSelectItem('projects', ${p.id}, this.checked)" ${appState.selection.projects.includes(p.id) ? 'checked' : ''}></td>
-                        <td><a href="javascript:void(0)" onclick="navigateTo('project-details', ${p.id})" style="color:var(--text-primary); font-weight:500;">${sanitizeHTML(p.name)}</a></td>
-                        <td>${sanitizeHTML(p.client_name || 'N/A')}</td>
-                        <td>${p.end_date || 'N/A'}</td>
-                        <td><span class="badge ${getStatusColor(p.status)}">${p.status}</span></td>
+                        <td><a href="javascript:void(0)" onclick="navigateTo('project-details', ${p.id})" style="color:var(--text-primary); font-weight:500;">${nameClean}</a></td>
+                        <td>${clientClean}</td>
+                        <td>${sanitizeHTML(p.end_date || 'N/A')}</td>
+                        <td><span class="badge ${getStatusColor(p.status)}">${statusClean}</span></td>
                         <td style="min-width: 120px;">
                             <div class="progress-bar"><div class="progress-bar-fill" style="width: ${progress}%"></div></div>
                             <span style="font-size: 0.75rem;">${progress}%</span>
@@ -456,14 +456,18 @@ function filterTasks(status, btn) {
 
     tbody.innerHTML = filtered.length > 0 ? filtered.map(t => {
         const project = appState.projects.find(p => p.id === t.project_id) || { name: 'Unknown' };
+        const titleClean = sanitizeHTML(t.title);
+        const projectNameClean = sanitizeHTML(project.name);
+        const priorityClean = sanitizeHTML(t.priority);
+        const statusClean = sanitizeHTML(t.status);
         return `
             <tr>
                 <td><input type="checkbox" onchange="toggleSelectItem('tasks', ${t.id}, this.checked)" ${appState.selection.tasks.includes(t.id) ? 'checked' : ''}></td>
-                <td><strong>${sanitizeHTML(t.title)}</strong></td>
-                <td>${sanitizeHTML(project.name)}</td>
-                <td><span class="badge ${getStatusColor(t.priority)}">${t.priority}</span></td>
-                <td>${t.due_date || 'N/A'}</td>
-                <td><span class="badge ${getStatusColor(t.status)}">${t.status}</span></td>
+                <td><strong>${titleClean}</strong></td>
+                <td>${projectNameClean}</td>
+                <td><span class="badge ${getStatusColor(t.priority)}">${priorityClean}</span></td>
+                <td>${sanitizeHTML(t.due_date || 'N/A')}</td>
+                <td><span class="badge ${getStatusColor(t.status)}">${statusClean}</span></td>
                 <td class="text-right">
                     <button class="btn btn-ghost" onclick="openEditTaskModal(${t.id})"><span class="material-symbols-outlined">edit</span></button>
                     ${checkPermission('delete:task') ? `<button class="btn btn-ghost" style="color:var(--status-error);" onclick="confirmDeleteTask(${t.id})"><span class="material-symbols-outlined">delete</span></button>` : ''}
@@ -598,20 +602,46 @@ async function handleLogin(event) {
     const email = event.target.email.value;
     const password = event.target.password.value;
 
-    btn.disabled = true;
-    btn.innerHTML = '<span class="material-symbols-outlined spinning" style="font-size: 18px;">progress_activity</span> Signing In...';
-
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-
-    if (error) {
-        showToast(error.message, 'error');
-        btn.disabled = false;
-        btn.innerHTML = 'Sign In';
+    if (!email || !password) {
+        showToast('Please enter both email and password', 'warning');
         return;
     }
 
-    showToast('Login successful', 'success');
-    checkSession();
+    btn.disabled = true;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<span class="material-symbols-outlined spinning" style="font-size: 18px;">progress_activity</span> Signing In...';
+
+    try {
+        if (!window.supabase || !supabase.auth) {
+            throw new Error('Database connection not ready. Please refresh.');
+        }
+
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+        if (error) {
+            console.error('Login error:', error);
+            let userMessage = error.message;
+            if (error.message.includes('Email not confirmed')) {
+                userMessage = 'Please verify your email address before logging in.';
+            } else if (error.message.includes('Invalid login credentials')) {
+                userMessage = 'Incorrect email or password. Please try again.';
+            }
+            showToast(userMessage, 'error');
+            btn.disabled = false;
+            btn.innerHTML = 'Sign In';
+            return;
+        }
+
+        showToast('Login successful', 'success');
+
+        // Wait for session to be fully established and UI to update
+        await checkSession();
+    } catch (err) {
+        console.error('Critical Auth Error:', err);
+        showToast(err.message || 'An unexpected error occurred', 'error');
+        btn.disabled = false;
+        btn.innerHTML = 'Sign In';
+    }
 }
 
 async function handleSignup(event) {
@@ -622,28 +652,47 @@ async function handleSignup(event) {
     const password = event.target.password.value;
     const role = event.target.role.value;
 
-    btn.disabled = true;
-    btn.innerHTML = '<span class="material-symbols-outlined spinning" style="font-size: 18px;">progress_activity</span> Creating Account...';
-
-    const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-            data: { full_name: name, role: role }
-        }
-    });
-
-    if (error) {
-        showToast(error.message, 'error');
-        btn.disabled = false;
-        btn.innerHTML = 'Create Account';
+    if (!name || !email || !password) {
+        showToast('Please fill in all required fields', 'warning');
         return;
     }
 
-    showToast('Account created! Please check your email.', 'success');
-    setTimeout(() => {
-        navigateTo('login');
-    }, 2000);
+    btn.disabled = true;
+    btn.innerHTML = '<span class="material-symbols-outlined spinning" style="font-size: 18px;">progress_activity</span> Creating Account...';
+
+    try {
+        const { data, error } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+                data: { full_name: name, role: role },
+                emailRedirectTo: window.location.origin
+            }
+        });
+
+        if (error) {
+            showToast(error.message, 'error');
+            btn.disabled = false;
+            btn.innerHTML = 'Create Account';
+            return;
+        }
+
+        // If the user is automatically logged in (depends on Supabase settings)
+        if (data.session) {
+            showToast('Account created and logged in!', 'success');
+            await checkSession();
+        } else {
+            showToast('Account created! Please check your email for a verification link.', 'success');
+            setTimeout(() => {
+                navigateTo('login');
+            }, 3000);
+        }
+    } catch (err) {
+        console.error('Signup error:', err);
+        showToast('Failed to create account', 'error');
+        btn.disabled = false;
+        btn.innerHTML = 'Create Account';
+    }
 }
 
 function handleLogout() {
@@ -1239,7 +1288,12 @@ function renderTeam(container) {
             <button class="btn btn-primary" onclick="openInviteMemberModal()"><span class="material-symbols-outlined">person_add</span> Invite Member</button>
         </div>
         <div class="grid-4">
-            ${appState.team.map(member => `
+            ${appState.team.map(member => {
+        const nameClean = sanitizeHTML(member.full_name || 'Team Member');
+        const roleClean = sanitizeHTML(member.role || 'Member');
+        const emailClean = sanitizeHTML(member.email || 'No email');
+        const bioClean = sanitizeHTML(member.bio || 'No bio available.');
+        return `
                 <div class="card text-center" style="position:relative;">
                     ${checkPermission('delete:member') ? `
                     <button class="btn btn-ghost" onclick="confirmDeleteMember('${member.id}')" style="position:absolute; top:10px; right:10px; padding:4px; color:var(--status-error); border:none;">
@@ -1248,12 +1302,13 @@ function renderTeam(container) {
                     <div style="width: 64px; height: 64px; background: var(--bg-tertiary); border-radius: 50%; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; border: 2px solid var(--accent-blue); overflow: hidden;">
                         <span class="material-symbols-outlined" style="font-size: 32px; color: var(--text-tertiary);">person</span>
                     </div>
-                    <h3 style="margin-bottom: 0.25rem;">${sanitizeHTML(member.full_name || 'Team Member')}</h3>
-                    <p style="font-size: 0.85rem; color: var(--accent-blue); margin-bottom: 0.5rem; font-weight: 600;">${member.role || 'Member'}</p>
-                    ${isPrivileged ? `<p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.5rem;">${sanitizeHTML(member.email || 'No email')}</p>` : ''}
-                    <p style="font-size: 0.8rem; color: var(--text-tertiary); line-height: 1.4; margin-bottom: 1rem;">${sanitizeHTML(member.bio || 'No bio available.')}</p>
+                    <h3 style="margin-bottom: 0.25rem;">${nameClean}</h3>
+                    <p style="font-size: 0.85rem; color: var(--accent-blue); margin-bottom: 0.5rem; font-weight: 600;">${roleClean}</p>
+                    ${isPrivileged ? `<p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.5rem;">${emailClean}</p>` : ''}
+                    <p style="font-size: 0.8rem; color: var(--text-tertiary); line-height: 1.4; margin-bottom: 1rem;">${bioClean}</p>
                     ${checkPermission('view:activity') ? `<button class="btn btn-ghost w-100" onclick="openMemberActivityModal('${member.id}')"><span class="material-symbols-outlined" style="font-size:18px;">analytics</span> View Activity</button>` : ''}
-                </div>`).join('')}
+                </div>`;
+    }).join('')}
         </div>
     `;
 }
@@ -1281,16 +1336,21 @@ window.renderClients = (container) => {
                         <tr><th>Client Name</th><th>Email</th><th>Active Projects</th><th class="text-right">Actions</th></tr>
                     </thead>
                     <tbody>
-                        ${appState.clients.length > 0 ? appState.clients.map(c => `
+                        ${appState.clients.length > 0 ? appState.clients.map(c => {
+        const nameClean = sanitizeHTML(c.name);
+        const emailClean = sanitizeHTML(c.email || 'N/A');
+        const projectCount = appState.projects.filter(p => p.client_id === c.id).length;
+        return `
                             <tr>
-                                <td style="font-weight: 600;">${sanitizeHTML(c.name)}</td>
-                                <td>${sanitizeHTML(c.email || 'N/A')}</td>
-                                <td>${appState.projects.filter(p => p.client_id === c.id).length}</td>
+                                <td style="font-weight: 600;">${nameClean}</td>
+                                <td>${emailClean}</td>
+                                <td>${projectCount}</td>
                                 <td class="text-right">
                                     <button class="btn btn-ghost" onclick="navigateTo('client-details', ${c.id})">Details</button>
                                     ${checkPermission('delete:client') ? `<button class="btn btn-ghost" style="color:var(--status-error);" onclick="confirmDeleteClient(${c.id})"><span class="material-symbols-outlined" style="font-size:18px;">delete</span></button>` : ''}
                                 </td>
-                            </tr>`).join('') : '<tr><td colspan="4" style="text-align: center; padding: 2rem; color: var(--text-tertiary);">No clients found.</td></tr>'}
+                            </tr>`;
+    }).join('') : '<tr><td colspan="4" style="text-align: center; padding: 2rem; color: var(--text-tertiary);">No clients found.</td></tr>'}
                     </tbody>
                 </table>
             </div>
