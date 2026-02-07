@@ -2,7 +2,7 @@
   "version": 2,
   "functions": {
     "src/index.js": {
-      "runtime": "vercel-node@latest",
+      "runtime": "@vercel/node",
       "memory": 1024
     }
   },
