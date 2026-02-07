@@ -1,0 +1,167 @@
+{
+  "steps": {
+    "node\\src\\steps\\api\\users.step.zip": {
+      "type": "node",
+      "entrypointPath": "\\src\\steps\\api\\users.step.js",
+      "config": {
+        "name": "ListUsers",
+        "type": "api",
+        "path": "/api/users",
+        "method": "GET",
+        "emits": [],
+        "flows": [
+          "user-management"
+        ],
+        "middleware": [
+          null,
+          null
+        ]
+      },
+      "filePath": "D:\\work\\app\\src\\steps\\api\\users.step.js"
+    },
+    "node\\src\\steps\\api\\hello.step.zip": {
+      "type": "node",
+      "entrypointPath": "\\src\\steps\\api\\hello.step.js",
+      "config": {
+        "name": "HelloWorld",
+        "type": "api",
+        "path": "/api/hello",
+        "method": "GET",
+        "emits": [],
+        "flows": [
+          "system-monitoring"
+        ],
+        "middleware": [
+          null
+        ]
+      },
+      "filePath": "D:\\work\\app\\src\\steps\\api\\hello.step.js"
+    },
+    "node\\src\\steps\\api\\health.step.zip": {
+      "type": "node",
+      "entrypointPath": "\\src\\steps\\api\\health.step.js",
+      "config": {
+        "name": "HealthCheck",
+        "type": "api",
+        "path": "/api/health",
+        "method": "GET",
+        "emits": [],
+        "flows": [
+          "system-monitoring"
+        ],
+        "middleware": [
+          null
+        ]
+      },
+      "filePath": "D:\\work\\app\\src\\steps\\api\\health.step.js"
+    },
+    "node\\src\\steps\\api\\data.step.zip": {
+      "type": "node",
+      "entrypointPath": "\\src\\steps\\api\\data.step.js",
+      "config": {
+        "name": "DataProxy",
+        "type": "api",
+        "path": "/api/data/:table",
+        "method": "GET",
+        "emits": [],
+        "flows": [
+          "data-management"
+        ]
+      },
+      "filePath": "D:\\work\\app\\src\\steps\\api\\data.step.js"
+    },
+    "node\\src\\steps\\api\\auth\\signup.step.zip": {
+      "type": "node",
+      "entrypointPath": "\\src\\steps\\api\\auth\\signup.step.js",
+      "config": {
+        "name": "Signup",
+        "type": "api",
+        "path": "/api/auth/signup",
+        "method": "POST",
+        "emits": [],
+        "flows": [
+          "auth"
+        ],
+        "middleware": [
+          null
+        ]
+      },
+      "filePath": "D:\\work\\app\\src\\steps\\api\\auth\\signup.step.js"
+    },
+    "node\\src\\steps\\api\\auth\\session.step.zip": {
+      "type": "node",
+      "entrypointPath": "\\src\\steps\\api\\auth\\session.step.js",
+      "config": {
+        "name": "GetSession",
+        "type": "api",
+        "path": "/api/auth/session",
+        "method": "GET",
+        "emits": [],
+        "flows": [
+          "auth"
+        ]
+      },
+      "filePath": "D:\\work\\app\\src\\steps\\api\\auth\\session.step.js"
+    },
+    "node\\src\\steps\\api\\auth\\register-app.step.zip": {
+      "type": "node",
+      "entrypointPath": "\\src\\steps\\api\\auth\\register-app.step.js",
+      "config": {
+        "name": "RegisterApp",
+        "type": "api",
+        "path": "/api/auth/register-app",
+        "method": "POST",
+        "emits": [],
+        "flows": [
+          "auth"
+        ],
+        "middleware": [
+          null
+        ]
+      },
+      "filePath": "D:\\work\\app\\src\\steps\\api\\auth\\register-app.step.js"
+    },
+    "node\\src\\steps\\api\\auth\\profile.step.zip": {
+      "type": "node",
+      "entrypointPath": "\\src\\steps\\api\\auth\\profile.step.js",
+      "config": {
+        "name": "GetUserProfile",
+        "type": "api",
+        "path": "/api/auth/profile",
+        "method": "GET",
+        "emits": [],
+        "flows": [
+          "auth"
+        ]
+      },
+      "filePath": "D:\\work\\app\\src\\steps\\api\\auth\\profile.step.js"
+    },
+    "node\\src\\steps\\api\\auth\\login.step.zip": {
+      "type": "node",
+      "entrypointPath": "\\src\\steps\\api\\auth\\login.step.js",
+      "config": {
+        "name": "Login",
+        "type": "api",
+        "path": "/api/auth/login",
+        "method": "POST",
+        "emits": [],
+        "flows": [
+          "auth"
+        ],
+        "middleware": [
+          null
+        ]
+      },
+      "filePath": "D:\\work\\app\\src\\steps\\api\\auth\\login.step.js"
+    }
+  },
+  "streams": {
+    "syncUpdates": {
+      "name": "syncUpdates",
+      "storageType": "default"
+    }
+  },
+  "routers": {
+    "node": "router-node.zip"
+  }
+}
